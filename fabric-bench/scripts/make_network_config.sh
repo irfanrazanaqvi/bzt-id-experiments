@@ -4,6 +4,7 @@
 set -euo pipefail
 TN="$(cd "$1" && pwd)"
 OUT="$2"
+mkdir -p "$(dirname "$OUT")"
 ORG="$TN/organizations/peerOrganizations/org1.example.com"
 KEY="$(ls "$ORG"/users/User1@org1.example.com/msp/keystore/*_sk | head -n1)"
 CERT="$(ls "$ORG"/users/User1@org1.example.com/msp/signcerts/*.pem | head -n1)"
