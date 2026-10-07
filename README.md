@@ -49,15 +49,20 @@ Actions runner (`.github/workflows/fabric-benchmark.yml`, push to the `fabric-be
 raw logs and results are kept on the `fabric-results` branch. Selected results are in `data/fabric/`, plotted
 by `code/plot_fabric_results.py` as `figures/fig7_fabric_real_benchmark.png`.
 
-| Operation (4-vCPU runner, 30 s rounds, 0 failed tx in all rounds) | Default batching (2 s, 10 tx/block) | Tuned batching (200 ms, 100 tx/block) |
+Mean over n = 4 independent runs (min-max in brackets); per-run raw results are in `data/fabric/repeats_run6/` and
+`data/fabric/fabric_*_summary_n4.csv`. 0 failed transactions in every round of every run.
+
+| Operation (4-vCPU runner, 30 s rounds) | Default batching (2 s, 10 tx/block) | Tuned batching (200 ms, 100 tx/block) |
 |---|---|---|
-| `IssueCredential` mean latency at 100 tx/s offered | 70 ms | 140 ms |
-| `IssueCredential` mean latency at 10 tx/s offered | 480 ms | 130 ms |
-| `IssueCredential` committed throughput at 300 tx/s offered | 266 tx/s | 205 tx/s (saturated) |
-| `VerifyCredential` (read-only) at 600 tx/s offered | 599 tx/s, about 3 ms max | 575 tx/s, about 3 ms max |
+| `IssueCredential` mean latency at 100 tx/s offered | 72 ms (70-80) | 138 ms (120-150) |
+| `IssueCredential` mean latency at 10 tx/s offered | 490 ms (480-520) | 130 ms |
+| `IssueCredential` committed throughput at 300 tx/s offered | 227 tx/s (187-266) | 226 tx/s (195-299) |
+| `VerifyCredential` (read-only) at 600 tx/s offered | 586 tx/s (570-600) | 572 tx/s (536-600) |
+
+The write ceiling is **unstable between runs** (about 190-300 tx/s); do not quote a single run.
 
 **Caveats.** Standard 2-organisation `test-network`, single Raft orderer (crash-fault tolerant, not Byzantine),
-all containers plus the Caliper load generator on one machine, one run per configuration. The N = 4-25
+all containers plus the Caliper load generator on one machine, four runs per configuration. The N = 4-25
 consortium-size experiment of the simulator is **not** reproduced here. Treat these as order-of-magnitude
 validation, not as a model of a distributed national deployment.
 
