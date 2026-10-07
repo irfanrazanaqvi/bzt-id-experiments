@@ -1,0 +1,761 @@
+<!doctype html>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
+<script>
+    function plotChart(divId, chartData) {
+        // Convert from stringified html, to valid JSON
+        const chartDetails = JSON.parse(chartData.replace(/&quot;/g,'"'));
+        new Chart(document.getElementById(divId), {
+            type: chartDetails.type,
+            data: {
+                labels: chartDetails.labels,
+                datasets: chartDetails.datasets
+            },
+            options: {
+                legend: { display: chartDetails.legend },
+                title: {
+                    display: true,
+                    text: chartDetails.title
+                }
+            }
+        });
+    }
+</script>
+<html>
+<head>
+    <title>Hyperledger Caliper Report</title>
+    <meta charset="UTF-8"/>
+    <style type="text/css">
+        .left-column {
+            position: fixed;
+            width:20%;
+        }
+        .left-column ul {
+            display: block;
+            padding: 0;
+            list-style: none;
+            border-bottom: 1px solid #d9d9d9;
+            font-size: 14px;
+        }
+        .left-column h2{
+            font-size: 24px;
+            font-weight: 400;
+            margin-block-end: 0.5em;
+        }
+        .left-column h3{
+            font-size: 18px;
+            font-weight: 400;
+            margin-block-end: 0.5em;
+        }
+        .left-column li{
+            margin-left: 10px;
+            margin-bottom: 5px;
+            color: #5e6b73;
+        }
+        .right-column {
+            margin-left: 22%;
+            width:60%;
+        }
+        .right-column table {
+            font-size:11px;
+            color:#333333;
+            border-width: 1px;
+            border-color: #666666;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        .right-column h2{
+            font-weight: 400;
+        }
+        .right-column h3{
+            font-weight: 400;
+        }
+        .right-column h4 {
+            font-weight: 400;
+            margin-block-end: 0;
+        }
+        .right-column th {
+            border-width: 1px;
+            font-size: small;
+            padding: 8px;
+            border-style: solid;
+            border-color: #666666;
+            background-color: #f2f2f2;
+        }
+        .right-column td {
+            border-width: 1px;
+            font-size: small;
+            padding: 8px;
+            border-style: solid;
+            border-color: #666666;
+            background-color: #ffffff;
+            font-weight: 400;
+        }
+        .tag {
+            margin-bottom: 10px;
+            padding: 5px 10px;
+        }
+        pre {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            background-color: #f2f2f2;
+            -webkit-border-radius: 5px;
+            -moz-border-radius: 5px;
+            -khtml-border-radius: 5px;
+            overflow:auto;
+            max-height:300px;
+            font-size:12px;
+        }
+        .charting {
+            display:flex;
+            flex-direction:row;
+            flex-wrap: wrap;
+            page-break-inside: auto;
+        }
+        .chart {
+            display:flex;
+            flex:1;
+            max-width: 50%;
+        }
+    </style>
+</head>
+<body style="font-family: IBM Plex Sans; font-weight: 200;">
+    <main>
+        <div class="left-column">
+            <img src="https://hyperledger-caliper.github.io/caliper/assets/img/hyperledger_caliper_logo_color.png" style="width:95%;" alt="">
+            <ul>
+                <h3>&nbspBasic information</h3>
+                <li>DLT: &nbsp<span style="font-weight: 500;">fabric</span></li>
+                <li>Name: &nbsp<span style="font-weight: 500;">bzt-id-fabric</span></li>
+                <li>Description: &nbsp<span style="font-weight: 500;">BZT-ID credential issuance, verification and audit on real Hyperledger Fabric</span></li>
+                <li>Benchmark Rounds: &nbsp<span style="font-weight: 500;">16</span></li>
+                <li><a href="#benchmarkInfo">Details</a></li>
+            </ul>
+            <ul>
+                <h3>&nbspBenchmark results</h3>
+                <li><a href="#benchmarksummary">Summary</a></li>
+                    <li><a href="#seed">seed</a></li>
+                    <li><a href="#issue-10tps">issue-10tps</a></li>
+                    <li><a href="#issue-25tps">issue-25tps</a></li>
+                    <li><a href="#issue-50tps">issue-50tps</a></li>
+                    <li><a href="#issue-100tps">issue-100tps</a></li>
+                    <li><a href="#issue-150tps">issue-150tps</a></li>
+                    <li><a href="#issue-200tps">issue-200tps</a></li>
+                    <li><a href="#issue-300tps">issue-300tps</a></li>
+                    <li><a href="#verify-100tps">verify-100tps</a></li>
+                    <li><a href="#verify-200tps">verify-200tps</a></li>
+                    <li><a href="#verify-400tps">verify-400tps</a></li>
+                    <li><a href="#verify-600tps">verify-600tps</a></li>
+                    <li><a href="#audit-10tps">audit-10tps</a></li>
+                    <li><a href="#audit-50tps">audit-50tps</a></li>
+                    <li><a href="#audit-100tps">audit-100tps</a></li>
+                    <li><a href="#audit-200tps">audit-200tps</a></li>
+            </ul>
+            <ul>
+                <h3>&nbspSystem under test</h3>
+                <li><a href="#sutdetails">Details</a></li>
+            </ul>
+        </div>
+
+        <div class="right-column">
+            <h1 style="padding-top: 3em; font-weight: 500;">Caliper report</h1>
+            <div style="border-bottom: 1px solid #d9d9d9; margin-bottom: 10px;" id="benchmarksummary">
+                <table style="min-width: 100%;">
+                    <h3>Summary of performance metrics</h3>
+                    <tr>
+                         <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                    </tr>
+
+                    <tr>
+                         <td>seed</td> <td>500</td> <td>0</td> <td>87.8</td> <td>0.52</td> <td>0.07</td> <td>0.31</td> <td>85.9</td>
+                    </tr>
+                    <tr>
+                         <td>issue-10tps</td> <td>301</td> <td>0</td> <td>10.0</td> <td>0.24</td> <td>0.02</td> <td>0.13</td> <td>10.0</td>
+                    </tr>
+                    <tr>
+                         <td>issue-25tps</td> <td>751</td> <td>0</td> <td>25.0</td> <td>0.23</td> <td>0.02</td> <td>0.12</td> <td>25.0</td>
+                    </tr>
+                    <tr>
+                         <td>issue-50tps</td> <td>1501</td> <td>0</td> <td>50.0</td> <td>0.26</td> <td>0.02</td> <td>0.13</td> <td>49.8</td>
+                    </tr>
+                    <tr>
+                         <td>issue-100tps</td> <td>3001</td> <td>0</td> <td>100.0</td> <td>0.27</td> <td>0.03</td> <td>0.14</td> <td>99.9</td>
+                    </tr>
+                    <tr>
+                         <td>issue-150tps</td> <td>4501</td> <td>0</td> <td>150.0</td> <td>0.28</td> <td>0.04</td> <td>0.16</td> <td>149.1</td>
+                    </tr>
+                    <tr>
+                         <td>issue-200tps</td> <td>5995</td> <td>0</td> <td>199.9</td> <td>0.35</td> <td>0.06</td> <td>0.19</td> <td>198.3</td>
+                    </tr>
+                    <tr>
+                         <td>issue-300tps</td> <td>6190</td> <td>0</td> <td>206.3</td> <td>0.50</td> <td>0.07</td> <td>0.22</td> <td>204.7</td>
+                    </tr>
+                    <tr>
+                         <td>verify-100tps</td> <td>3001</td> <td>0</td> <td>100.0</td> <td>0.02</td> <td>0.00</td> <td>0.00</td> <td>100.0</td>
+                    </tr>
+                    <tr>
+                         <td>verify-200tps</td> <td>6001</td> <td>0</td> <td>200.0</td> <td>0.02</td> <td>0.00</td> <td>0.00</td> <td>200.0</td>
+                    </tr>
+                    <tr>
+                         <td>verify-400tps</td> <td>12001</td> <td>0</td> <td>400.0</td> <td>0.02</td> <td>0.00</td> <td>0.00</td> <td>400.0</td>
+                    </tr>
+                    <tr>
+                         <td>verify-600tps</td> <td>17259</td> <td>0</td> <td>575.3</td> <td>0.03</td> <td>0.00</td> <td>0.00</td> <td>575.3</td>
+                    </tr>
+                    <tr>
+                         <td>audit-10tps</td> <td>301</td> <td>0</td> <td>10.0</td> <td>0.23</td> <td>0.01</td> <td>0.13</td> <td>10.0</td>
+                    </tr>
+                    <tr>
+                         <td>audit-50tps</td> <td>1501</td> <td>0</td> <td>50.0</td> <td>0.24</td> <td>0.02</td> <td>0.13</td> <td>49.8</td>
+                    </tr>
+                    <tr>
+                         <td>audit-100tps</td> <td>3001</td> <td>0</td> <td>100.0</td> <td>0.26</td> <td>0.03</td> <td>0.14</td> <td>99.8</td>
+                    </tr>
+                    <tr>
+                         <td>audit-200tps</td> <td>5999</td> <td>0</td> <td>200.0</td> <td>0.32</td> <td>0.06</td> <td>0.18</td> <td>199.2</td>
+                    </tr>
+                </table>
+            </div>
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="seed">
+                <h2>Benchmark round: seed</h2>
+                <p></p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">rateControl:
+  type: fixed-load
+  opts:
+    transactionLoad: 50
+</pre>
+                        <h3>Performance metrics for seed</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>seed</td> <td>500</td> <td>0</td> <td>87.8</td> <td>0.52</td> <td>0.07</td> <td>0.31</td> <td>85.9</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for seed</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="issue-10tps">
+                <h2>Benchmark round: issue-10tps</h2>
+                <p></p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 30
+rateControl:
+  type: fixed-rate
+  opts:
+    tps: 10
+</pre>
+                        <h3>Performance metrics for issue-10tps</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>issue-10tps</td> <td>301</td> <td>0</td> <td>10.0</td> <td>0.24</td> <td>0.02</td> <td>0.13</td> <td>10.0</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for issue-10tps</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="issue-25tps">
+                <h2>Benchmark round: issue-25tps</h2>
+                <p></p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 30
+rateControl:
+  type: fixed-rate
+  opts:
+    tps: 25
+</pre>
+                        <h3>Performance metrics for issue-25tps</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>issue-25tps</td> <td>751</td> <td>0</td> <td>25.0</td> <td>0.23</td> <td>0.02</td> <td>0.12</td> <td>25.0</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for issue-25tps</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="issue-50tps">
+                <h2>Benchmark round: issue-50tps</h2>
+                <p></p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 30
+rateControl:
+  type: fixed-rate
+  opts:
+    tps: 50
+</pre>
+                        <h3>Performance metrics for issue-50tps</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>issue-50tps</td> <td>1501</td> <td>0</td> <td>50.0</td> <td>0.26</td> <td>0.02</td> <td>0.13</td> <td>49.8</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for issue-50tps</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="issue-100tps">
+                <h2>Benchmark round: issue-100tps</h2>
+                <p></p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 30
+rateControl:
+  type: fixed-rate
+  opts:
+    tps: 100
+</pre>
+                        <h3>Performance metrics for issue-100tps</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>issue-100tps</td> <td>3001</td> <td>0</td> <td>100.0</td> <td>0.27</td> <td>0.03</td> <td>0.14</td> <td>99.9</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for issue-100tps</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="issue-150tps">
+                <h2>Benchmark round: issue-150tps</h2>
+                <p></p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 30
+rateControl:
+  type: fixed-rate
+  opts:
+    tps: 150
+</pre>
+                        <h3>Performance metrics for issue-150tps</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>issue-150tps</td> <td>4501</td> <td>0</td> <td>150.0</td> <td>0.28</td> <td>0.04</td> <td>0.16</td> <td>149.1</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for issue-150tps</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="issue-200tps">
+                <h2>Benchmark round: issue-200tps</h2>
+                <p></p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 30
+rateControl:
+  type: fixed-rate
+  opts:
+    tps: 200
+</pre>
+                        <h3>Performance metrics for issue-200tps</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>issue-200tps</td> <td>5995</td> <td>0</td> <td>199.9</td> <td>0.35</td> <td>0.06</td> <td>0.19</td> <td>198.3</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for issue-200tps</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="issue-300tps">
+                <h2>Benchmark round: issue-300tps</h2>
+                <p></p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 30
+rateControl:
+  type: fixed-rate
+  opts:
+    tps: 300
+</pre>
+                        <h3>Performance metrics for issue-300tps</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>issue-300tps</td> <td>6190</td> <td>0</td> <td>206.3</td> <td>0.50</td> <td>0.07</td> <td>0.22</td> <td>204.7</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for issue-300tps</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="verify-100tps">
+                <h2>Benchmark round: verify-100tps</h2>
+                <p></p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 30
+rateControl:
+  type: fixed-rate
+  opts:
+    tps: 100
+</pre>
+                        <h3>Performance metrics for verify-100tps</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>verify-100tps</td> <td>3001</td> <td>0</td> <td>100.0</td> <td>0.02</td> <td>0.00</td> <td>0.00</td> <td>100.0</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for verify-100tps</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="verify-200tps">
+                <h2>Benchmark round: verify-200tps</h2>
+                <p></p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 30
+rateControl:
+  type: fixed-rate
+  opts:
+    tps: 200
+</pre>
+                        <h3>Performance metrics for verify-200tps</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>verify-200tps</td> <td>6001</td> <td>0</td> <td>200.0</td> <td>0.02</td> <td>0.00</td> <td>0.00</td> <td>200.0</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for verify-200tps</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="verify-400tps">
+                <h2>Benchmark round: verify-400tps</h2>
+                <p></p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 30
+rateControl:
+  type: fixed-rate
+  opts:
+    tps: 400
+</pre>
+                        <h3>Performance metrics for verify-400tps</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>verify-400tps</td> <td>12001</td> <td>0</td> <td>400.0</td> <td>0.02</td> <td>0.00</td> <td>0.00</td> <td>400.0</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for verify-400tps</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="verify-600tps">
+                <h2>Benchmark round: verify-600tps</h2>
+                <p></p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 30
+rateControl:
+  type: fixed-rate
+  opts:
+    tps: 600
+</pre>
+                        <h3>Performance metrics for verify-600tps</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>verify-600tps</td> <td>17259</td> <td>0</td> <td>575.3</td> <td>0.03</td> <td>0.00</td> <td>0.00</td> <td>575.3</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for verify-600tps</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="audit-10tps">
+                <h2>Benchmark round: audit-10tps</h2>
+                <p></p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 30
+rateControl:
+  type: fixed-rate
+  opts:
+    tps: 10
+</pre>
+                        <h3>Performance metrics for audit-10tps</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>audit-10tps</td> <td>301</td> <td>0</td> <td>10.0</td> <td>0.23</td> <td>0.01</td> <td>0.13</td> <td>10.0</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for audit-10tps</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="audit-50tps">
+                <h2>Benchmark round: audit-50tps</h2>
+                <p></p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 30
+rateControl:
+  type: fixed-rate
+  opts:
+    tps: 50
+</pre>
+                        <h3>Performance metrics for audit-50tps</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>audit-50tps</td> <td>1501</td> <td>0</td> <td>50.0</td> <td>0.24</td> <td>0.02</td> <td>0.13</td> <td>49.8</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for audit-50tps</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="audit-100tps">
+                <h2>Benchmark round: audit-100tps</h2>
+                <p></p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 30
+rateControl:
+  type: fixed-rate
+  opts:
+    tps: 100
+</pre>
+                        <h3>Performance metrics for audit-100tps</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>audit-100tps</td> <td>3001</td> <td>0</td> <td>100.0</td> <td>0.26</td> <td>0.03</td> <td>0.14</td> <td>99.8</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for audit-100tps</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;" id="audit-200tps">
+                <h2>Benchmark round: audit-200tps</h2>
+                <p></p>
+                <pre style="overflow: visible;white-space: pre-wrap;max-height:100%;">txDuration: 30
+rateControl:
+  type: fixed-rate
+  opts:
+    tps: 200
+</pre>
+                        <h3>Performance metrics for audit-200tps</h3>
+                            <table style="min-width: 100%;">
+                                <tr>
+                                     <th>Name</th> <th>Succ</th> <th>Fail</th> <th>Send Rate (TPS)</th> <th>Max Latency (s)</th> <th>Min Latency (s)</th> <th>Avg Latency (s)</th> <th>Throughput (TPS)</th>
+                                </tr>
+                                <tr>
+                                     <td>audit-200tps</td> <td>5999</td> <td>0</td> <td>200.0</td> <td>0.32</td> <td>0.06</td> <td>0.18</td> <td>199.2</td>
+                                </tr>
+                            </table>
+                        <h3>Resource utilization for audit-200tps</h3>
+            </div>
+
+            <div style="border-bottom: 1px solid #d9d9d9; padding-bottom: 10px;">
+                <h2>Test Environment</h2>
+                <h3>benchmark config</h3>
+                <pre id="benchmarkInfo" style="overflow: visible;white-space: pre-wrap;max-height:100%;">name: bzt-id-fabric
+description: BZT-ID credential issuance, verification and audit on real Hyperledger Fabric
+workers:
+  number: 1
+rounds:
+  - label: seed
+    txNumber: 500
+    rateControl:
+      type: fixed-load
+      opts:
+        transactionLoad: 50
+    workload:
+      module: workload&#x2F;bzt-workload.js
+      arguments:
+        op: seed
+        contractId: bzt
+        seedCount: 500
+  - label: issue-10tps
+    txDuration: 30
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 10
+    workload:
+      module: workload&#x2F;bzt-workload.js
+      arguments:
+        op: issue
+        contractId: bzt
+        seedCount: 500
+  - label: issue-25tps
+    txDuration: 30
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 25
+    workload:
+      module: workload&#x2F;bzt-workload.js
+      arguments:
+        op: issue
+        contractId: bzt
+        seedCount: 500
+  - label: issue-50tps
+    txDuration: 30
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 50
+    workload:
+      module: workload&#x2F;bzt-workload.js
+      arguments:
+        op: issue
+        contractId: bzt
+        seedCount: 500
+  - label: issue-100tps
+    txDuration: 30
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 100
+    workload:
+      module: workload&#x2F;bzt-workload.js
+      arguments:
+        op: issue
+        contractId: bzt
+        seedCount: 500
+  - label: issue-150tps
+    txDuration: 30
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 150
+    workload:
+      module: workload&#x2F;bzt-workload.js
+      arguments:
+        op: issue
+        contractId: bzt
+        seedCount: 500
+  - label: issue-200tps
+    txDuration: 30
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 200
+    workload:
+      module: workload&#x2F;bzt-workload.js
+      arguments:
+        op: issue
+        contractId: bzt
+        seedCount: 500
+  - label: issue-300tps
+    txDuration: 30
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 300
+    workload:
+      module: workload&#x2F;bzt-workload.js
+      arguments:
+        op: issue
+        contractId: bzt
+        seedCount: 500
+  - label: verify-100tps
+    txDuration: 30
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 100
+    workload:
+      module: workload&#x2F;bzt-workload.js
+      arguments:
+        op: verify
+        contractId: bzt
+        seedCount: 500
+  - label: verify-200tps
+    txDuration: 30
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 200
+    workload:
+      module: workload&#x2F;bzt-workload.js
+      arguments:
+        op: verify
+        contractId: bzt
+        seedCount: 500
+  - label: verify-400tps
+    txDuration: 30
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 400
+    workload:
+      module: workload&#x2F;bzt-workload.js
+      arguments:
+        op: verify
+        contractId: bzt
+        seedCount: 500
+  - label: verify-600tps
+    txDuration: 30
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 600
+    workload:
+      module: workload&#x2F;bzt-workload.js
+      arguments:
+        op: verify
+        contractId: bzt
+        seedCount: 500
+  - label: audit-10tps
+    txDuration: 30
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 10
+    workload:
+      module: workload&#x2F;bzt-workload.js
+      arguments:
+        op: audit
+        contractId: bzt
+        seedCount: 500
+  - label: audit-50tps
+    txDuration: 30
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 50
+    workload:
+      module: workload&#x2F;bzt-workload.js
+      arguments:
+        op: audit
+        contractId: bzt
+        seedCount: 500
+  - label: audit-100tps
+    txDuration: 30
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 100
+    workload:
+      module: workload&#x2F;bzt-workload.js
+      arguments:
+        op: audit
+        contractId: bzt
+        seedCount: 500
+  - label: audit-200tps
+    txDuration: 30
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 200
+    workload:
+      module: workload&#x2F;bzt-workload.js
+      arguments:
+        op: audit
+        contractId: bzt
+        seedCount: 500
+</pre>
+                <h3>SUT</h3>
+                <pre id="sutdetails">not provided</pre>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

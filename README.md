@@ -41,9 +41,29 @@ This installs the dependencies, runs all experiments (about 12 seconds) and rege
 | Attack detection (20,000 sessions, 4 attack classes) | BZT-ID: 99.8% recall, AUC 0.987; static biometric-only MFA baseline: 89.8% recall, AUC 0.960 |
 | Ledger tamper-evidence (5 tamper points) | 100% detection, full downstream block invalidation |
 
+## Real Hyperledger Fabric benchmark (Caliper)
+
+`fabric-bench/` runs the BZT-ID chaincode (issue / verify / audit / revoke commitments) on a **real**
+Hyperledger Fabric 2.5.9 network and measures it with Hyperledger Caliper 0.7.1. It executes on a free GitHub
+Actions runner (`.github/workflows/fabric-benchmark.yml`, push to the `fabric-bench` branch or run it manually);
+raw logs and results are kept on the `fabric-results` branch. Selected results are in `data/fabric/`, plotted
+by `code/plot_fabric_results.py` as `figures/fig7_fabric_real_benchmark.png`.
+
+| Operation (4-vCPU runner, 30 s rounds, 0 failed tx in all rounds) | Default batching (2 s, 10 tx/block) | Tuned batching (200 ms, 100 tx/block) |
+|---|---|---|
+| `IssueCredential` mean latency at 100 tx/s offered | 70 ms | 140 ms |
+| `IssueCredential` mean latency at 10 tx/s offered | 480 ms | 130 ms |
+| `IssueCredential` committed throughput at 300 tx/s offered | 266 tx/s | 205 tx/s (saturated) |
+| `VerifyCredential` (read-only) at 600 tx/s offered | 599 tx/s, about 3 ms max | 575 tx/s, about 3 ms max |
+
+**Caveats.** Standard 2-organisation `test-network`, single Raft orderer (crash-fault tolerant, not Byzantine),
+all containers plus the Caliper load generator on one machine, one run per configuration. The N = 4-25
+consortium-size experiment of the simulator is **not** reproduced here. Treat these as order-of-magnitude
+validation, not as a model of a distributed national deployment.
+
 ## Notes
 
-- This is a simulation, not a production Hyperledger Fabric deployment. Latency and throughput figures come from the discrete-event model described in the paper.
+- Experiments 1-4 above come from a discrete-event simulation. Their absolute latency is lower than what real Fabric shows (see the Fabric benchmark section).
 - The attack workload is synthetic and labelled; see the paper for the generation procedure and limitations.
 
 ## Citation
