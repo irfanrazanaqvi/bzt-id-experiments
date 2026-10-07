@@ -1,0 +1,162 @@
+test:
+  name: bzt-id-fabric
+  description: BZT-ID credential issuance, verification and audit on real Hyperledger Fabric
+  workers:
+    number: 1
+  rounds:
+    - label: seed
+      txNumber: 500
+      rateControl:
+        type: fixed-load
+        opts:
+          transactionLoad: 5
+      workload:
+        module: workload/bzt-workload.js
+        arguments:
+          op: seed
+          contractId: bzt
+          seedCount: 500
+    - label: issue-10tps
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 10
+      workload:
+        module: workload/bzt-workload.js
+        arguments:
+          op: issue
+          contractId: bzt
+          seedCount: 500
+    - label: issue-25tps
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 25
+      workload:
+        module: workload/bzt-workload.js
+        arguments:
+          op: issue
+          contractId: bzt
+          seedCount: 500
+    - label: issue-50tps
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 50
+      workload:
+        module: workload/bzt-workload.js
+        arguments:
+          op: issue
+          contractId: bzt
+          seedCount: 500
+    - label: issue-100tps
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 100
+      workload:
+        module: workload/bzt-workload.js
+        arguments:
+          op: issue
+          contractId: bzt
+          seedCount: 500
+    - label: verify-10tps
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 10
+      workload:
+        module: workload/bzt-workload.js
+        arguments:
+          op: verify
+          contractId: bzt
+          seedCount: 500
+    - label: verify-25tps
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 25
+      workload:
+        module: workload/bzt-workload.js
+        arguments:
+          op: verify
+          contractId: bzt
+          seedCount: 500
+    - label: verify-50tps
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 50
+      workload:
+        module: workload/bzt-workload.js
+        arguments:
+          op: verify
+          contractId: bzt
+          seedCount: 500
+    - label: verify-100tps
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 100
+      workload:
+        module: workload/bzt-workload.js
+        arguments:
+          op: verify
+          contractId: bzt
+          seedCount: 500
+    - label: audit-10tps
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 10
+      workload:
+        module: workload/bzt-workload.js
+        arguments:
+          op: audit
+          contractId: bzt
+          seedCount: 500
+    - label: audit-25tps
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 25
+      workload:
+        module: workload/bzt-workload.js
+        arguments:
+          op: audit
+          contractId: bzt
+          seedCount: 500
+    - label: audit-50tps
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 50
+      workload:
+        module: workload/bzt-workload.js
+        arguments:
+          op: audit
+          contractId: bzt
+          seedCount: 500
+    - label: audit-100tps
+      txDuration: 30
+      rateControl:
+        type: fixed-rate
+        opts:
+          tps: 100
+      workload:
+        module: workload/bzt-workload.js
+        arguments:
+          op: audit
+          contractId: bzt
+          seedCount: 500
