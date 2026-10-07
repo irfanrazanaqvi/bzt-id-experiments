@@ -1,0 +1,121 @@
+name: fabric-bft-benchmark
+
+# Runs the BZT-ID chaincode on a real Hyperledger Fabric test-network and benchmarks it
+# with Hyperledger Caliper. Results and logs are committed to the `fabric-results` branch.
+on:
+  push:
+    branches: [fabric-bft]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bench:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        ordering: [raft, bft]
+        batch: [default, tuned]
+        rep: [1, 2]
+    env:
+      FABRIC_VERSION: "3.0.0"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: System information
+        run: |
+          mkdir -p out
+          { uname -a; echo "cpus: $(nproc)"; free -m; docker version; node --version; npm --version; } > out/system.txt 2>&1 || true
+          cat out/system.txt
+
+      - name: Chaincode unit test
+        run: |
+          cd fabric-bench/chaincode
+          npm install --no-audit --no-fund
+          npm test 2>&1 | tee ../../out/chaincode_test.log
+          rm -rf node_modules package-lock.json
+
+      - name: Install Fabric binaries, images and samples
+        run: |
+          curl -sSLO https://raw.githubusercontent.com/hyperledger/fabric/main/scripts/install-fabric.sh
+          chmod +x install-fabric.sh
+          ./install-fabric.sh --fabric-version "$FABRIC_VERSION" docker samples binary 2>&1 | tee out/install.log
+
+      - name: Configure orderer batch settings (${{ matrix.ordering }}/${{ matrix.batch }})
+        run: |
+          F=fabric-samples/test-network/configtx/configtx.yaml
+          if [ "${{ matrix.batch }}" = "tuned" ]; then
+            sed -i 's/BatchTimeout: 2s/BatchTimeout: 200ms/; s/MaxMessageCount: 10$/MaxMessageCount: 100/' "$F"
+          fi
+          grep -n "BatchTimeout\|MaxMessageCount\|AbsoluteMaxBytes\|PreferredMaxBytes" "$F" | tee out/batch_config.txt
+
+      - name: Start network, create channel, deploy chaincode
+        run: |
+          cd fabric-samples/test-network
+          export PATH="$PWD/../bin:$PATH"
+          ./network.sh -h 2>&1 | head -60 > "$GITHUB_WORKSPACE/out/network_help.txt" || true
+          if [ "${{ matrix.ordering }}" = "bft" ]; then
+            ./network.sh up createChannel -c mychannel -bft 2>&1 | tee "$GITHUB_WORKSPACE/out/network.log"
+          else
+            ./network.sh up createChannel -c mychannel 2>&1 | tee "$GITHUB_WORKSPACE/out/network.log"
+          fi
+          docker ps --format '{{.Names}}' | sort | tee "$GITHUB_WORKSPACE/out/containers.txt"
+          ./network.sh deployCC -ccn bzt -ccp "$GITHUB_WORKSPACE/fabric-bench/chaincode" -ccl javascript 2>&1 | tee "$GITHUB_WORKSPACE/out/deploy.log"
+
+      - name: Run Caliper benchmark
+        run: |
+          npm install -g npm@11 2>&1 | tail -2 || true
+          npm --version
+          cd fabric-bench/caliper
+          npm install --no-audit --no-fund 2>&1 | tee "$GITHUB_WORKSPACE/out/caliper_npm_install.log"
+          npx caliper bind --caliper-bind-sut fabric:2.5 2>&1 | tee "$GITHUB_WORKSPACE/out/caliper_bind.log"
+          find "$GITHUB_WORKSPACE/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users" | head -40 > "$GITHUB_WORKSPACE/out/user_files.txt" 2>&1 || true
+          bash -x ../scripts/make_network_config.sh "$GITHUB_WORKSPACE/fabric-samples/test-network" networks/networkConfig.yaml 2>&1 | tee "$GITHUB_WORKSPACE/out/make_network_config.log"
+          cp networks/networkConfig.yaml "$GITHUB_WORKSPACE/out/networkConfig.used.yaml"
+          npx caliper launch manager \
+            --caliper-workspace . \
+            --caliper-networkconfig networks/networkConfig.yaml \
+            --caliper-benchconfig benchmarks/config.yaml \
+            --caliper-flow-only-test 2>&1 | tee "$GITHUB_WORKSPACE/out/caliper.log"
+
+      - name: Parse results
+        if: always()
+        run: |
+          python3 fabric-bench/scripts/parse_caliper.py out/caliper.log out/fabric_results.csv || true
+          cp fabric-bench/caliper/report.html out/ 2>/dev/null || true
+
+      - name: Collect container logs
+        if: always()
+        run: |
+          docker ps -a > out/docker_ps.txt 2>&1 || true
+          for c in $(docker ps -a --format '{{.Names}}'); do docker logs --tail 300 "$c" > "out/container_$c.log" 2>&1 || true; done
+
+      - name: Publish results to fabric-results branch
+        if: always()
+        run: |
+          RUN="bft-run-${{ github.run_number }}-${{ matrix.ordering }}-${{ matrix.batch }}-rep${{ matrix.rep }}"
+          URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          for attempt in 1 2 3 4 5 6; do
+            rm -rf res
+            if git ls-remote --exit-code --heads "$URL" fabric-results >/dev/null 2>&1; then
+              git clone -q --depth 1 --branch fabric-results "$URL" res
+            else
+              mkdir res && (cd res && git init -q -b fabric-results && git remote add origin "$URL")
+            fi
+            mkdir -p "res/$RUN"
+            cp -r out/* "res/$RUN/" || true
+            cd res
+            git config user.name "github-actions"
+            git config user.email "github-actions@users.noreply.github.com"
+            git add -A
+            git commit -q -m "Fabric benchmark results $RUN (job status: ${{ job.status }})" || true
+            if git push origin fabric-results; then break; fi
+            cd ..; sleep $((attempt * 5))
+          done
