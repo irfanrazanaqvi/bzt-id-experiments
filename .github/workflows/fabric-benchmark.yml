@@ -56,7 +56,8 @@ jobs:
           cd fabric-bench/caliper
           npm install --no-audit --no-fund 2>&1 | tee "$GITHUB_WORKSPACE/out/caliper_npm_install.log"
           npx caliper bind --caliper-bind-sut fabric:2.5 2>&1 | tee "$GITHUB_WORKSPACE/out/caliper_bind.log"
-          ../scripts/make_network_config.sh "$GITHUB_WORKSPACE/fabric-samples/test-network" networks/networkConfig.yaml
+          find "$GITHUB_WORKSPACE/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/users" | head -40 > "$GITHUB_WORKSPACE/out/user_files.txt" 2>&1 || true
+          bash -x ../scripts/make_network_config.sh "$GITHUB_WORKSPACE/fabric-samples/test-network" networks/networkConfig.yaml 2>&1 | tee "$GITHUB_WORKSPACE/out/make_network_config.log"
           cp networks/networkConfig.yaml "$GITHUB_WORKSPACE/out/networkConfig.used.yaml"
           npx caliper launch manager \
             --caliper-workspace . \
