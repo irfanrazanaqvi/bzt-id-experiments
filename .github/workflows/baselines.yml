@@ -1,0 +1,43 @@
+name: baselines
+on:
+  push:
+    branches: [baselines]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  bench:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [central, jwt]
+        rep: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Benchmark
+        run: |
+          mkdir -p out; { uname -a; nproc; node --version; } > out/system.txt
+          bash baselines/bench.sh ${{ matrix.mode }} out/baseline.csv 2>&1 | tee out/run.log
+      - name: Publish
+        if: always()
+        run: |
+          RUN="baseline-run-${{ github.run_number }}-${{ matrix.mode }}-rep${{ matrix.rep }}"
+          URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          for attempt in 1 2 3 4 5 6; do
+            rm -rf res
+            if git ls-remote --exit-code --heads "$URL" fabric-results >/dev/null 2>&1; then
+              git clone -q --depth 1 --branch fabric-results "$URL" res
+            else
+              mkdir res && (cd res && git init -q -b fabric-results && git remote add origin "$URL")
+            fi
+            mkdir -p "res/$RUN"; cp -r out/* "res/$RUN/" || true
+            cd res; git config user.name github-actions; git config user.email github-actions@users.noreply.github.com
+            git add -A; git commit -q -m "Baselines $RUN (${{ job.status }})" || true
+            if git push origin fabric-results; then break; fi
+            cd ..; sleep $((attempt * 5))
+          done
