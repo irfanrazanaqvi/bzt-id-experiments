@@ -18,6 +18,7 @@ jobs:
       fail-fast: false
       matrix:
         batch: [default, tuned]
+        rep: [1, 2, 3]
     env:
       FABRIC_VERSION: "2.5.9"
     steps:
@@ -92,7 +93,7 @@ jobs:
       - name: Publish results to fabric-results branch
         if: always()
         run: |
-          RUN="run-${{ github.run_number }}-${{ matrix.batch }}"
+          RUN="run-${{ github.run_number }}-${{ matrix.batch }}-rep${{ matrix.rep }}"
           URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
           for attempt in 1 2 3 4 5 6; do
             rm -rf res
