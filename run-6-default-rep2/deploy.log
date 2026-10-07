@@ -1,0 +1,140 @@
+[0;34mUsing docker and docker compose[0m
+[0;34mdeploying chaincode on channel 'mychannel'[0m
+executing with the following
+- CHANNEL_NAME: [0;32mmychannel[0m
+- CC_NAME: [0;32mbzt[0m
+- CC_SRC_PATH: [0;32m/home/runner/work/bzt-id-experiments/bzt-id-experiments/fabric-bench/chaincode[0m
+- CC_SRC_LANGUAGE: [0;32mjavascript[0m
+- CC_VERSION: [0;32m1.0[0m
+- CC_SEQUENCE: [0;32mauto[0m
+- CC_END_POLICY: [0;32mNA[0m
+- CC_COLL_CONFIG: [0;32mNA[0m
+- CC_INIT_FCN: [0;32mNA[0m
+- DELAY: [0;32m3[0m
+- MAX_RETRY: [0;32m5[0m
+- VERBOSE: [0;32mfalse[0m
+executing with the following
+- CC_NAME: [0;32mbzt[0m
+- CC_SRC_PATH: [0;32m/home/runner/work/bzt-id-experiments/bzt-id-experiments/fabric-bench/chaincode[0m
+- CC_SRC_LANGUAGE: [0;32mjavascript[0m
+- CC_VERSION: [0;32m1.0[0m
++ '[' false = true ']'
++ peer lifecycle chaincode package bzt.tar.gz --path /home/runner/work/bzt-id-experiments/bzt-id-experiments/fabric-bench/chaincode --lang node --label bzt_1.0
++ res=0
+[0;32mChaincode is packaged[0m
+[0;34mInstalling chaincode on peer0.org1...[0m
+[0;34mUsing organization 1[0m
++ peer lifecycle chaincode queryinstalled --output json
++ jq -r 'try (.installed_chaincodes[].package_id)'
++ grep '^bzt_1.0:777c383bc4d25d7dc5610f92a201167f7301ed4b2cd3593b83e643df51c39c71$'
++ test 1 -ne 0
++ peer lifecycle chaincode install bzt.tar.gz
++ res=0
+[34m2026-10-07 11:22:12.033 UTC 0001 INFO[0m [cli.lifecycle.chaincode] [34;1msubmitInstallProposal[0m -> Installed remotely: response:<status:200 payload:"\nHbzt_1.0:777c383bc4d25d7dc5610f92a201167f7301ed4b2cd3593b83e643df51c39c71\022\007bzt_1.0" > 
+[34m2026-10-07 11:22:12.033 UTC 0002 INFO[0m [cli.lifecycle.chaincode] [34;1msubmitInstallProposal[0m -> Chaincode code package identifier: bzt_1.0:777c383bc4d25d7dc5610f92a201167f7301ed4b2cd3593b83e643df51c39c71
+[0;32mChaincode is installed on peer0.org1[0m
+[0;34mInstall chaincode on peer0.org2...[0m
+[0;34mUsing organization 2[0m
++ peer lifecycle chaincode queryinstalled --output json
++ jq -r 'try (.installed_chaincodes[].package_id)'
++ grep '^bzt_1.0:777c383bc4d25d7dc5610f92a201167f7301ed4b2cd3593b83e643df51c39c71$'
++ test 1 -ne 0
++ peer lifecycle chaincode install bzt.tar.gz
++ res=0
+[34m2026-10-07 11:22:20.034 UTC 0001 INFO[0m [cli.lifecycle.chaincode] [34;1msubmitInstallProposal[0m -> Installed remotely: response:<status:200 payload:"\nHbzt_1.0:777c383bc4d25d7dc5610f92a201167f7301ed4b2cd3593b83e643df51c39c71\022\007bzt_1.0" > 
+[34m2026-10-07 11:22:20.034 UTC 0002 INFO[0m [cli.lifecycle.chaincode] [34;1msubmitInstallProposal[0m -> Chaincode code package identifier: bzt_1.0:777c383bc4d25d7dc5610f92a201167f7301ed4b2cd3593b83e643df51c39c71
+[0;32mChaincode is installed on peer0.org2[0m
+++ peer lifecycle chaincode querycommitted --channelID mychannel --name bzt
+++ sed -n '/Version:/{s/.*Sequence: //; s/, Endorsement Plugin:.*$//; p;}'
+Error: query failed with status: 404 - namespace bzt is not defined
++ COMMITTED_CC_SEQUENCE=
++ res=0
+[0;34mUsing organization 1[0m
++ peer lifecycle chaincode queryinstalled --output json
++ grep '^bzt_1.0:777c383bc4d25d7dc5610f92a201167f7301ed4b2cd3593b83e643df51c39c71$'
++ jq -r 'try (.installed_chaincodes[].package_id)'
++ res=0
+bzt_1.0:777c383bc4d25d7dc5610f92a201167f7301ed4b2cd3593b83e643df51c39c71
+[0;32mQuery installed successful on peer0.org1 on channel[0m
+[0;34mUsing organization 1[0m
++ peer lifecycle chaincode approveformyorg -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile /home/runner/work/bzt-id-experiments/bzt-id-experiments/fabric-samples/test-network/organizations/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem --channelID mychannel --name bzt --version 1.0 --package-id bzt_1.0:777c383bc4d25d7dc5610f92a201167f7301ed4b2cd3593b83e643df51c39c71 --sequence 1
++ res=0
+[34m2026-10-07 11:22:22.207 UTC 0001 INFO[0m [chaincodeCmd] [34;1mClientWait[0m -> txid [c5e66531db8ce844671d04e6e530829cfe7c287dbd580ced51852e5f958dee8c] committed with status (VALID) at localhost:7051
+[0;32mChaincode definition approved on peer0.org1 on channel 'mychannel'[0m
+[0;34mUsing organization 1[0m
+[0;34mChecking the commit readiness of the chaincode definition on peer0.org1 on channel 'mychannel'...[0m
+[0;34mAttempting to check the commit readiness of the chaincode definition on peer0.org1, Retry after 3 seconds.[0m
++ peer lifecycle chaincode checkcommitreadiness --channelID mychannel --name bzt --version 1.0 --sequence 1 --output json
++ res=0
+{
+	"approvals": {
+		"Org1MSP": true,
+		"Org2MSP": false
+	}
+}
+[0;34mChecking the commit readiness of the chaincode definition successful on peer0.org1 on channel 'mychannel'[0m
+[0;34mUsing organization 2[0m
+[0;34mChecking the commit readiness of the chaincode definition on peer0.org2 on channel 'mychannel'...[0m
+[0;34mAttempting to check the commit readiness of the chaincode definition on peer0.org2, Retry after 3 seconds.[0m
++ peer lifecycle chaincode checkcommitreadiness --channelID mychannel --name bzt --version 1.0 --sequence 1 --output json
++ res=0
+{
+	"approvals": {
+		"Org1MSP": true,
+		"Org2MSP": false
+	}
+}
+[0;34mChecking the commit readiness of the chaincode definition successful on peer0.org2 on channel 'mychannel'[0m
+[0;34mUsing organization 2[0m
++ peer lifecycle chaincode approveformyorg -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile /home/runner/work/bzt-id-experiments/bzt-id-experiments/fabric-samples/test-network/organizations/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem --channelID mychannel --name bzt --version 1.0 --package-id bzt_1.0:777c383bc4d25d7dc5610f92a201167f7301ed4b2cd3593b83e643df51c39c71 --sequence 1
++ res=0
+[34m2026-10-07 11:22:30.393 UTC 0001 INFO[0m [chaincodeCmd] [34;1mClientWait[0m -> txid [cb84fd33b26c645f3140b3bcd1ecf150831329f17878f70ede4cb93c9dded243] committed with status (VALID) at localhost:9051
+[0;32mChaincode definition approved on peer0.org2 on channel 'mychannel'[0m
+[0;34mUsing organization 1[0m
+[0;34mChecking the commit readiness of the chaincode definition on peer0.org1 on channel 'mychannel'...[0m
+[0;34mAttempting to check the commit readiness of the chaincode definition on peer0.org1, Retry after 3 seconds.[0m
++ peer lifecycle chaincode checkcommitreadiness --channelID mychannel --name bzt --version 1.0 --sequence 1 --output json
++ res=0
+{
+	"approvals": {
+		"Org1MSP": true,
+		"Org2MSP": true
+	}
+}
+[0;34mChecking the commit readiness of the chaincode definition successful on peer0.org1 on channel 'mychannel'[0m
+[0;34mUsing organization 2[0m
+[0;34mChecking the commit readiness of the chaincode definition on peer0.org2 on channel 'mychannel'...[0m
+[0;34mAttempting to check the commit readiness of the chaincode definition on peer0.org2, Retry after 3 seconds.[0m
++ peer lifecycle chaincode checkcommitreadiness --channelID mychannel --name bzt --version 1.0 --sequence 1 --output json
++ res=0
+{
+	"approvals": {
+		"Org1MSP": true,
+		"Org2MSP": true
+	}
+}
+[0;34mChecking the commit readiness of the chaincode definition successful on peer0.org2 on channel 'mychannel'[0m
+[0;34mUsing organization 1[0m
+[0;34mUsing organization 2[0m
++ peer lifecycle chaincode commit -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile /home/runner/work/bzt-id-experiments/bzt-id-experiments/fabric-samples/test-network/organizations/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem --channelID mychannel --name bzt --peerAddresses localhost:7051 --tlsRootCertFiles /home/runner/work/bzt-id-experiments/bzt-id-experiments/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/tlsca/tlsca.org1.example.com-cert.pem --peerAddresses localhost:9051 --tlsRootCertFiles /home/runner/work/bzt-id-experiments/bzt-id-experiments/fabric-samples/test-network/organizations/peerOrganizations/org2.example.com/tlsca/tlsca.org2.example.com-cert.pem --version 1.0 --sequence 1
++ res=0
+[34m2026-10-07 11:22:38.583 UTC 0001 INFO[0m [chaincodeCmd] [34;1mClientWait[0m -> txid [e28142d029d702dff1a3e875303b3dec8ac864f819bdbc39e394cae86a8ece27] committed with status (VALID) at localhost:9051
+[34m2026-10-07 11:22:38.583 UTC 0002 INFO[0m [chaincodeCmd] [34;1mClientWait[0m -> txid [e28142d029d702dff1a3e875303b3dec8ac864f819bdbc39e394cae86a8ece27] committed with status (VALID) at localhost:7051
+[0;32mChaincode definition committed on channel 'mychannel'[0m
+[0;34mUsing organization 1[0m
+[0;34mQuerying chaincode definition on peer0.org1 on channel 'mychannel'...[0m
+[0;34mAttempting to Query committed status on peer0.org1, Retry after 3 seconds.[0m
++ peer lifecycle chaincode querycommitted --channelID mychannel --name bzt
++ res=0
+Committed chaincode definition for chaincode 'bzt' on channel 'mychannel':
+Version: 1.0, Sequence: 1, Endorsement Plugin: escc, Validation Plugin: vscc, Approvals: [Org1MSP: true, Org2MSP: true]
+[0;32mQuery chaincode definition successful on peer0.org1 on channel 'mychannel'[0m
+[0;34mUsing organization 2[0m
+[0;34mQuerying chaincode definition on peer0.org2 on channel 'mychannel'...[0m
+[0;34mAttempting to Query committed status on peer0.org2, Retry after 3 seconds.[0m
++ peer lifecycle chaincode querycommitted --channelID mychannel --name bzt
++ res=0
+Committed chaincode definition for chaincode 'bzt' on channel 'mychannel':
+Version: 1.0, Sequence: 1, Endorsement Plugin: escc, Validation Plugin: vscc, Approvals: [Org1MSP: true, Org2MSP: true]
+[0;32mQuery chaincode definition successful on peer0.org2 on channel 'mychannel'[0m
+[0;34mChaincode initialization is not required[0m
