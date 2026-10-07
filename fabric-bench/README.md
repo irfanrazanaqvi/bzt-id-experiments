@@ -14,6 +14,6 @@ Benchmarks the BZT-ID on-chain logic on a **real** Hyperledger Fabric network (f
 
 ## Caveats (state these in the paper)
 - The network is the standard 2-organisation `test-network` with a single Raft orderer, all
-  containers on one 2-vCPU GitHub runner. Absolute numbers are not representative of a
+  containers on one 4-vCPU GitHub runner. Absolute numbers are not representative of a
   geographically distributed national deployment, and Raft is crash-fault tolerant, not Byzantine.
 - Caliper load generator and Fabric share the same machine, which lowers peak throughput.

@@ -51,10 +51,13 @@ jobs:
 
       - name: Run Caliper benchmark
         run: |
+          npm install -g npm@11 2>&1 | tail -2 || true
+          npm --version
           cd fabric-bench/caliper
-          npm install --no-audit --no-fund
-          npx caliper bind --caliper-bind-sut fabric:2.5
+          npm install --no-audit --no-fund 2>&1 | tee "$GITHUB_WORKSPACE/out/caliper_npm_install.log"
+          npx caliper bind --caliper-bind-sut fabric:2.5 2>&1 | tee "$GITHUB_WORKSPACE/out/caliper_bind.log"
           ../scripts/make_network_config.sh "$GITHUB_WORKSPACE/fabric-samples/test-network" networks/networkConfig.yaml
+          cp networks/networkConfig.yaml "$GITHUB_WORKSPACE/out/networkConfig.used.yaml"
           npx caliper launch manager \
             --caliper-workspace . \
             --caliper-networkconfig networks/networkConfig.yaml \
