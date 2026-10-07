@@ -303,10 +303,9 @@ class ZeroTrustEngine:
     """
 
     # Convex combination of six normalised risk signals (weights sum to
-    # 1.0), calibrated by grid-search against a labelled synthetic risk
-    # dataset (see experiments/train_weights.py in the code appendix)
-    # to maximise separation between the legitimate-user and attack
-    # score distributions reported in Section 7 (Fig. 6).
+    # 1.0). The weights are fixed, hand-specified design parameters; they
+    # are NOT learned or fitted to the evaluation workload. Their influence
+    # is examined in exp5_sensitivity.py (random weight vectors).
     WEIGHTS = {
         "biometric_match_score": 0.30,   # positively-oriented signal
         "device_posture_score": 0.15,    # positively-oriented signal

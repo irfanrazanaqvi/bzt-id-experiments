@@ -12,4 +12,6 @@ python3 fig2_sequence.py
 python3 exp1_scalability.py
 python3 exp3_zero_trust_detection.py
 python3 exp4_tamper_evidence.py
+python3 exp5_sensitivity.py
+python3 plot_fabric_results.py
 echo "== Done. Datasets in ./data, figures in ./figures =="
