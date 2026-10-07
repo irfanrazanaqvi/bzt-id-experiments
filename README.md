@@ -66,6 +66,22 @@ all containers plus the Caliper load generator on one machine, four runs per con
 consortium-size experiment of the simulator is **not** reproduced here. Treat these as order-of-magnitude
 validation, not as a model of a distributed national deployment.
 
+## Additional experiments (all run on free GitHub Actions)
+
+| Experiment | Workflow / script | Output |
+|---|---|---|
+| **Real biometric scores**: 9,164 public LFW images embedded with open-source FaceNet (VGGFace2 weights); 80,000 genuine/impostor pair scores, identities split into disjoint calibration/test halves | `.github/workflows/biometric-scores.yml`, `biometric/lfw_scores.py` | `data/biometric/` |
+| **Exp. 6**: trust engine with the real biometric factor (other five factors synthetic), biometric-only gate, post-hoc hybrid, supervised ML baselines, weight sensitivity | `code/exp6_real_biometric.py` | `data/exp6_*.csv`, `figures/fig9_real_biometric.png` |
+| **Fabric 3.0.0, Raft vs SmartBFT** (4 orderers), 2 runs x default/tuned batching | `.github/workflows/fabric-bft.yml` | `data/fabric3/` |
+| **Baselines**: centralized SQLite service and ES256 token service, 3 runs each | `.github/workflows/baselines.yml`, `baselines/` | `data/baselines/`, `figures/fig10_baselines_bft.png` |
+
+Key results: with real LFW biometric scores the engine reaches ROC-AUC 0.982 (95% CI 0.980-0.984), 84.7% recall at 6.7%
+of legitimate sessions flagged; it misses most hardest-10% look-alike impostors (a proxy for spoofing, because LFW has no
+spoof samples), which a 1%-FAR biometric gate catches, so a hybrid policy flags 97.6%. SmartBFT write ceiling about 145 tx/s
+vs about 205-235 tx/s for Raft on the same Fabric version; minimal centralized/token baselines sustained 1,000 write tx/s.
+Only the biometric factor is real; no public dataset contains CNIC/passport transactions. Fabric/baseline numbers come from
+shared 4-vCPU runners, vary between runs, and the BFT runs inject no Byzantine faults.
+
 ## Notes
 
 - Experiments 1-4 above come from a discrete-event simulation. Their absolute latency is lower than what real Fabric shows (see the Fabric benchmark section).

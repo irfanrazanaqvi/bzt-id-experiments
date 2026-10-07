@@ -14,4 +14,6 @@ python3 exp3_zero_trust_detection.py
 python3 exp4_tamper_evidence.py
 python3 exp5_sensitivity.py
 python3 plot_fabric_results.py
+python3 exp6_real_biometric.py ../data/biometric/lfw_pair_scores.csv
+python3 fig10_baselines_bft.py
 echo "== Done. Datasets in ./data, figures in ./figures =="
