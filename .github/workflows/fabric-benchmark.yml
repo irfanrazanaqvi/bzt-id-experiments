@@ -14,6 +14,10 @@ jobs:
   bench:
     runs-on: ubuntu-24.04
     timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        batch: [default, tuned]
     env:
       FABRIC_VERSION: "2.5.9"
     steps:
@@ -41,6 +45,14 @@ jobs:
           curl -sSLO https://raw.githubusercontent.com/hyperledger/fabric/main/scripts/install-fabric.sh
           chmod +x install-fabric.sh
           ./install-fabric.sh --fabric-version "$FABRIC_VERSION" docker samples binary 2>&1 | tee out/install.log
+
+      - name: Configure orderer batch settings (${{ matrix.batch }})
+        run: |
+          F=fabric-samples/test-network/configtx/configtx.yaml
+          if [ "${{ matrix.batch }}" = "tuned" ]; then
+            sed -i 's/BatchTimeout: 2s/BatchTimeout: 200ms/; s/MaxMessageCount: 10$/MaxMessageCount: 100/' "$F"
+          fi
+          grep -n "BatchTimeout\|MaxMessageCount\|AbsoluteMaxBytes\|PreferredMaxBytes" "$F" | tee out/batch_config.txt
 
       - name: Start network, create channel, deploy chaincode
         run: |
@@ -80,18 +92,22 @@ jobs:
       - name: Publish results to fabric-results branch
         if: always()
         run: |
-          RUN="run-${{ github.run_number }}"
+          RUN="run-${{ github.run_number }}-${{ matrix.batch }}"
           URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
-          if git ls-remote --exit-code --heads "$URL" fabric-results >/dev/null 2>&1; then
-            git clone --depth 1 --branch fabric-results "$URL" res
-          else
-            mkdir res && cd res && git init -q -b fabric-results && git remote add origin "$URL" && cd ..
-          fi
-          mkdir -p "res/$RUN"
-          cp -r out/* "res/$RUN/" || true
-          cd res
-          git config user.name "github-actions"
-          git config user.email "github-actions@users.noreply.github.com"
-          git add -A
-          git commit -q -m "Fabric benchmark results $RUN (job status: ${{ job.status }})" || true
-          git push origin fabric-results
+          for attempt in 1 2 3 4 5 6; do
+            rm -rf res
+            if git ls-remote --exit-code --heads "$URL" fabric-results >/dev/null 2>&1; then
+              git clone -q --depth 1 --branch fabric-results "$URL" res
+            else
+              mkdir res && (cd res && git init -q -b fabric-results && git remote add origin "$URL")
+            fi
+            mkdir -p "res/$RUN"
+            cp -r out/* "res/$RUN/" || true
+            cd res
+            git config user.name "github-actions"
+            git config user.email "github-actions@users.noreply.github.com"
+            git add -A
+            git commit -q -m "Fabric benchmark results $RUN (job status: ${{ job.status }})" || true
+            if git push origin fabric-results; then break; fi
+            cd ..; sleep $((attempt * 5))
+          done
