@@ -20,14 +20,15 @@ SEED = 2026
 torch.set_num_threads(os.cpu_count() or 2)
 t0 = time.time()
 lfw = fetch_lfw_people(min_faces_per_person=2, resize=1.0, color=True, funneled=True)
-X, y = lfw.images, lfw.target                       # (n,h,w,3) float 0..255
+X, y = lfw.images, lfw.target                       # (n,h,w,3) float32 already scaled to 0..1 by sklearn
+assert 0.0 <= X.min() and X.max() <= 1.0 + 1e-6, (X.min(), X.max())
 print("images", X.shape, "identities", len(set(y)), flush=True)
 
 model = InceptionResnetV1(pretrained="vggface2").eval()
 embs = []
 with torch.no_grad():
     for i in range(0, len(X), 64):
-        b = torch.from_numpy(X[i:i+64]).permute(0, 3, 1, 2) / 255.0
+        b = torch.from_numpy(X[i:i+64]).permute(0, 3, 1, 2)
         b = torch.nn.functional.interpolate(b, size=(160, 160), mode="bilinear", align_corners=False)
         b = (b - 0.5) / 0.5                          # facenet fixed standardisation
         e = model(b)
@@ -54,6 +55,11 @@ for split in ("calibration", "test"):
     for lab, pairs in ((1, same), (0, diff)):
         for a, b in pairs:
             rows.append((split, lab, float(E[a] @ E[b])))
+from sklearn.metrics import roc_auc_score
+for sp in ("calibration", "test"):
+    r = [x for x in rows if x[0] == sp]
+    a = roc_auc_score([x[1] for x in r], [x[2] for x in r]); print("sanity AUC", sp, a, flush=True)
+    assert a > 0.9, "embeddings look broken"
 with open(os.path.join(out, "lfw_pair_scores.csv"), "w") as f:
     f.write("split,genuine,cosine\n")
     for r in rows: f.write(f"{r[0]},{r[1]},{r[2]:.6f}\n")
