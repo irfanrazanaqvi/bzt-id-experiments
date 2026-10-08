@@ -1,0 +1,69 @@
+(* BZT-ID credential issuance and presentation, Dolev-Yao model (ProVerif).
+   Abstractions: the consortium ledger is a table that only honest peers write and read (writes are
+   access-controlled chaincode calls); selective disclosure is modelled by per-attribute salted hash
+   commitments whose openings the holder reveals one at a time (no zero-knowledge proof is modelled).
+   NEGATIVE CONTROL: holder signature does not cover the verifier nonce (replay possible). *)
+free net: channel.                       (* public network, controlled by the attacker *)
+free enrol: channel [private].           (* in-person enrolment at the registrar *)
+
+type key.
+fun pk(key): key.
+fun sign(bitstring, key): bitstring.
+reduc forall m: bitstring, k: key; checksign(sign(m, k), pk(k)) = m.
+fun aenc(bitstring, key): bitstring.
+reduc forall m: bitstring, k: key; adec(aenc(m, pk(k)), k) = m.
+fun h(bitstring, bitstring): bitstring.  (* salted hash commitment, one-way *)
+
+table Active(bitstring).
+table Revoked(bitstring).
+table HonestKeys(key).
+
+free nm0, dob0: bitstring [private].     (* honest citizen's attributes *)
+free vid0: bitstring.                    (* verifier identity *)
+
+event Issued(key, bitstring).
+event Presents(key, bitstring, bitstring).
+event AcceptsHonest(key, bitstring, bitstring).
+
+query pkh: key, c1: bitstring, n: bitstring; inj-event(AcceptsHonest(pkh, c1, n)) ==> inj-event(Presents(pkh, c1, n)).
+query pkh: key, c1: bitstring, n: bitstring; event(AcceptsHonest(pkh, c1, n)) ==> event(Issued(pkh, c1)).
+query attacker(dob0).
+query attacker(nm0).
+(* sanity: the honest run is executable *)
+query pkh: key, c1: bitstring, n: bitstring; event(AcceptsHonest(pkh, c1, n)).
+
+let Issuer(skI: key) =
+  in(enrol, (pkh: key, nm: bitstring, dob: bitstring));
+  new s1: bitstring; new s2: bitstring;
+  let c1 = h(nm, s1) in let c2 = h(dob, s2) in
+  let cred = sign((pkh, c1, c2), skI) in
+  insert Active(c1);
+  event Issued(pkh, c1);
+  out(net, aenc((cred, c1, c2, nm, s1, dob, s2), pkh)).
+
+let Holder(skH: key, nm: bitstring, dob: bitstring) =
+  out(enrol, (pk(skH), nm, dob));
+  in(net, x: bitstring);
+  let (cred: bitstring, c1: bitstring, c2: bitstring, nm1: bitstring, s1: bitstring, dob1: bitstring, s2: bitstring) = adec(x, skH) in
+  (
+    !
+    in(net, (vid: bitstring, n: bitstring));
+    event Presents(pk(skH), c1, n);
+    out(net, (cred, nm, s1, sign((vid, c1, c2), skH)))      (* discloses the name only; the date of birth stays hidden *)
+  ).
+
+let Verifier(vid: bitstring, pkI: key) =
+  new n: bitstring;
+  out(net, (vid, n));
+  in(net, (cred: bitstring, nmv: bitstring, s1v: bitstring, sg: bitstring));
+  let (pkh: key, d1: bitstring, d2: bitstring) = checksign(cred, pkI) in
+  if h(nmv, s1v) = d1 then
+  let (=vid, =d1, =d2) = checksign(sg, pkh) in
+  get Active(=d1) in
+  get Revoked(=d1) in 0 else
+  get HonestKeys(=pkh) in event AcceptsHonest(pkh, d1, n).
+
+process
+  new skI: key; out(net, pk(skI));
+  new skH: key; insert HonestKeys(pk(skH)); out(net, pk(skH));
+  ( !Issuer(skI) | Holder(skH, nm0, dob0) | !Verifier(vid0, pk(skI)) )
