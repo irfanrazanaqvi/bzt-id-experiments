@@ -1,0 +1,48 @@
+name: cert-insider
+on:
+  push:
+    branches: [cert2]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  run:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Download CERT Insider Threat r4.2 (CC BY 4.0, CMU KiltHub) and extract logon/device logs
+        run: |
+          mkdir -p out data
+          sudo apt-get install -y -qq lbzip2 >/dev/null 2>&1 || true
+          curl -sSL -o data/answers.tar.bz2 https://ndownloader.figshare.com/files/24857828
+          curl -sSL -o data/CHECKSUMS-sha256.txt https://ndownloader.figshare.com/files/24857831
+          curl -sSL -o data/r42.tar.bz2 https://ndownloader.figshare.com/files/24856766
+          ls -la data | tee out/files.txt
+          sha256sum data/*.tar.bz2 | tee out/sha256.txt; cp data/CHECKSUMS-sha256.txt out/
+          tar -xjf data/answers.tar.bz2 -C data && find data -maxdepth 3 | head -30 | tee out/answers_tree.txt
+          tar -I lbzip2 -tf data/r42.tar.bz2 | head -30 | tee out/tar_list.txt
+          tar -I lbzip2 -xf data/r42.tar.bz2 -C data --wildcards '*logon.csv' '*device.csv' '*file.csv' 2>&1 | tee out/extract.log
+          find data -name "*.csv" | xargs ls -la | tee out/csvs.txt
+          for f in $(find data -name "logon.csv" -o -name "device.csv" -o -name "insiders.csv"); do echo "== $f"; head -4 "$f"; wc -l "$f"; done 2>&1 | tee out/heads.txt
+          rm -f data/r42.tar.bz2
+          ls data/answers | head -5; head -3 data/answers/r4.2-1/*.csv | head -12 | tee out/answers_head.txt
+          pip install -q pandas numpy scikit-learn
+          python3 cert/cert_eval.py data out 2>&1 | tee out/eval.log
+      - name: Publish
+        if: always()
+        run: |
+          RUN="cert2-${{ github.run_number }}"
+          URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          for attempt in 1 2 3 4 5 6; do
+            rm -rf res
+            if git ls-remote --exit-code --heads "$URL" fabric-results >/dev/null 2>&1; then git clone -q --depth 1 --branch fabric-results "$URL" res; else mkdir res && (cd res && git init -q -b fabric-results && git remote add origin "$URL"); fi
+            mkdir -p "res/$RUN"; cp -r out/* "res/$RUN/" || true
+            cd res; git config user.name github-actions; git config user.email github-actions@users.noreply.github.com
+            git add -A; git commit -q -m "CERT $RUN (${{ job.status }})" || true
+            if git push origin fabric-results; then break; fi
+            cd ..; sleep $((attempt * 5))
+          done

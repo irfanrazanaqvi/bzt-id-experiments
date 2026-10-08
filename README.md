@@ -78,6 +78,9 @@ validation, not as a model of a distributed national deployment.
 | **ProVerif 2.05** symbolic verification of the credential protocol, with two negative controls | `.github/workflows/proverif.yml`, `proverif/` | `data/proverif/` |
 | **BBS+ and Groth16** selective-disclosure benchmarks (4-vCPU runner, Node.js) | `.github/workflows/selective-disclosure.yml`, `zk/` | `data/zk/` |
 | **RBA public login data**: non-biometric factors, single rules and supervised baselines (attacker-IP and account-takeover labels) | `.github/workflows/rba-probe.yml`, `rba/rba_eval.py` | `data/rba/` |
+| **Emulated WAN**: Fabric 3.0.0 Raft vs SmartBFT with 0/15/40 ms one-way delay (tc netem), 2 runs each | `.github/workflows/fabric-wan.yml` | `data/wan/` |
+| **Learned weights and ablation** on the RBA login data (user-split, recalibrated threshold) | `rba/rba_eval.py` (rba2 branch workflow) | `data/rba2/` |
+| **CERT Insider Threat r4.2** (simulated, labelled): behavioural/device/time factors, ablation, supervised baselines | `cert/cert_eval.py`, `.github/workflows/cert-probe.yml` | `data/cert/` |
 
 Key results: with real LFW biometric scores the engine reaches ROC-AUC 0.982 (95% CI 0.980-0.984), 84.7% recall at 6.7%
 of legitimate sessions flagged; it misses most hardest-10% look-alike impostors (a proxy for spoofing, because LFW has no
@@ -91,6 +94,10 @@ of unavailability), with two down it halts without committing; ProVerif proves i
 negative controls (symbolic model only; only crash faults, not Byzantine behaviour, were injected); BBS+ presentation and
 Groth16 age-proof costs are about 80-110 ms on a server CPU; on the public RBA login data (synthesized from real logins)
 the fixed trust-engine weights do not transfer (attacker-IP AUC at chance), which is reported as a negative result.
+
+Emulated 40 ms one-way delay lowers peak write throughput by about 40% (Raft) and two thirds (SmartBFT, which also fails 28% of
+writes); learned weights recover account-takeover detection on the RBA data (19 held-out positives only); on the simulated CERT
+benchmark the engine reaches AUC 0.87 but a single removable-media rule reaches 0.86.
 
 ## Notes
 
