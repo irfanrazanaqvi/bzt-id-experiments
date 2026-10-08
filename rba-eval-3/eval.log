@@ -1,0 +1,46 @@
+pass1 31269264 attackIP rows 3096977 ATO rows 141 ATO users 138
+sample rows 1071032 users 268594
+history rows 704703 attackIP 41656 ATO 87
+    label                                        scheme       n  positives     AUC  AUC_lo  AUC_hi  recall@FPR=1%  recall@FPR=5%  recall@ALLOW<0.75  FPR@ALLOW<0.75
+0    y_ip          Engine (geo, device, ASN reputation)  704703      41656  0.4849  0.4808  0.4894         0.0080         0.0311             0.1306          0.2715
+1    y_ip                Engine (+ failed-login factor)  704703      41656  0.5542  0.5498  0.5587         0.0081         0.0584             0.1019          0.1201
+2    y_ip                      Single rule: new country  704703      41656  0.5058  0.5045  0.5072         1.0000         1.0000             0.0194          0.0078
+3    y_ip                       Single rule: new device  704703      41656  0.4236  0.4204  0.4263         0.1149         0.1149             0.1149          0.2677
+4    y_ip                     Single rule: failed login  704703      41656  0.5823  0.5778  0.5863         0.3380         0.3380             0.3380          0.1735
+5   y_ato          Engine (geo, device, ASN reputation)  704703         87  0.9127  0.8372  0.9606         0.4828         0.4943             0.8506          0.2631
+6   y_ato                Engine (+ failed-login factor)  704703         87  0.8710  0.7925  0.9276         0.0345         0.4598             0.8391          0.1190
+7   y_ato                      Single rule: new country  704703         87  0.8981  0.8292  0.9533         1.0000         1.0000             0.8046          0.0084
+8   y_ato                       Single rule: new device  704703         87  0.6063  0.5172  0.7089         0.4713         0.4713             0.4713          0.2586
+9   y_ato                     Single rule: failed login  704703         87  0.4141  0.4078  0.4400         0.0115         0.0115             0.0115          0.1832
+10   y_ip  Logistic regression (supervised, user-split)  140995       8104  0.6759     NaN     NaN         0.0300         0.3048                NaN             NaN
+11   y_ip    Gradient boosting (supervised, user-split)  140995       8104  0.9051     NaN     NaN         0.1425         0.5426                NaN             NaN
+12  y_ato  Logistic regression (supervised, user-split)  140995         19  0.9926     NaN     NaN         0.8947         0.8947                NaN             NaN
+13  y_ato    Gradient boosting (supervised, user-split)  140995         19  0.0927     NaN     NaN         0.0526         0.0526                NaN             NaN
+{
+ "rows_total": 31269264,
+ "attack_ip_rows_total": 3096977,
+ "ato_rows_total": 141,
+ "sample_rows": 1071032,
+ "sample_users": 268594,
+ "history_rows": 704703,
+ "history_attack_ip": 41656,
+ "history_ato": 87,
+ "feature_means_attack_vs_legit": {
+  "geo_new": [
+   0.05689456500864221,
+   0.060034205719956504
+  ],
+  "device_new": [
+   0.11491741885922796,
+   0.26767484054674856
+  ],
+  "asn_rare": [
+   0.004763327014957819,
+   0.003666315600576459
+  ],
+  "failed": [
+   0.33798252352602265,
+   0.17347789824854046
+  ]
+ }
+}
