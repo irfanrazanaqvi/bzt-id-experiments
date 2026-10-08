@@ -20,14 +20,14 @@ jobs:
           curl -sSL -o data/rba.zip "https://zenodo.org/records/6782156/files/rba-dataset.zip?download=1" 2>&1 | tail -2
           ls -la data | tee out/files.txt
           md5sum data/rba.zip | tee out/md5.txt
-          unzip -o -q data/rba.zip -d data/ && ls -la data | tee -a out/files.txt
-          F=$(ls data/*.csv | head -1); echo "$F" | tee out/csvname.txt
+          unzip -o -q data/rba.zip -d data/ && ls -la data | tee -a out/files.txt; rm -f data/rba.zip
+          cp data/README.md out/rba_README.md; cp data/RESULTS.md out/rba_RESULTS.md; F=data/rba-dataset.csv; echo "$F" | tee out/csvname.txt
           head -5 "$F" | tee out/head.txt
           wc -l "$F" | tee out/wc.txt
           pip install -q pandas
           python3 - <<'PY' 2>&1 | tee out/profile.txt
           import pandas as pd, glob
-          f=glob.glob('data/*.csv')[0]
+          f='data/rba-dataset.csv'
           d=pd.read_csv(f,nrows=2_000_000)
           print(d.dtypes); print(d.describe(include='all').T.to_string()[:4000])
           for c in d.columns:
