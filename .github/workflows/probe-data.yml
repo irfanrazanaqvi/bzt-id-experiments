@@ -23,6 +23,9 @@ jobs:
           probe "https://www.kaggle.com/datasets/ruizgara/socofing"
           probe "https://zenodo.org/api/records?q=fingerprint&size=5"
           } 2>&1 | tee out/probe.txt
+          curl -sL --max-time 40 'https://api.figshare.com/v2/articles/12841247' | python3 -c "import sys,json;d=json.load(sys.stdin);print(d.get('license',{}).get('name'));[print(f['name'],f['size'],f['download_url']) for f in d['files']]" 2>&1 | tee out/cert_files.txt
+          curl -sL --max-time 40 'http://bias.csr.unibo.it/fvc2004/databases.asp' | grep -oiE 'href="[^"]+"' | head -40 | tee out/fvc_links.txt
+          curl -sL --max-time 40 'https://zenodo.org/api/records?q=fingerprint%20AND%20(spoof%20OR%20liveness%20OR%20minutiae)&size=10' | python3 -c "import sys,json;d=json.load(sys.stdin);[print(h['id'],h['metadata'].get('license',{}).get('id'),h['metadata']['title'][:90]) for h in d['hits']['hits']]" 2>&1 | tee -a out/zenodo_fp.txt
           curl -sL --max-time 40 "https://csr.lanl.gov/data/cyber1/" | head -c 3000 > out/lanl_index.html || true
           curl -sL --max-time 40 "https://zenodo.org/api/records?q=fingerprint%20recognition&size=8&sort=mostviewed" | python3 -c "import sys,json;d=json.load(sys.stdin);[print(h['id'],h['metadata'].get('license',{}).get('id'),h['metadata']['title'][:90]) for h in d['hits']['hits']]" 2>&1 | tee out/zenodo_fp.txt
       - name: Publish
