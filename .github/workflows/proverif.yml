@@ -14,11 +14,15 @@ jobs:
       - name: Install ProVerif
         run: |
           mkdir -p out
-          (sudo apt-get update -qq; sudo apt-get install -y proverif; which proverif; dpkg -s proverif | grep Version) > out/install.log 2>&1 || true
+          (sudo add-apt-repository -y universe; sudo apt-get update; apt-cache policy proverif | head -5; sudo apt-get install -y proverif || true; which proverif || true) > out/install.log 2>&1 || true
+          if ! which proverif >/dev/null; then
+            echo "apt route failed; building ProVerif via opam" >> out/install.log
+            (sudo apt-get install -y opam ocaml-nox 2>&1 | tail -2; opam init -y --disable-sandboxing 2>&1 | tail -2; eval $(opam env); opam install -y proverif 2>&1 | tail -5; ln -sf "$(opam var bin)/proverif" /usr/local/bin/proverif 2>/dev/null || sudo ln -sf "$(opam var bin)/proverif" /usr/local/bin/proverif) >> out/install.log 2>&1 || true
+          fi
           tail -5 out/install.log
       - name: Verify protocol models
         run: |
-          dpkg -s proverif | grep Version > out/proverif_version.txt || true
+          (proverif -help 2>&1 | head -2; opam list proverif 2>/dev/null | tail -1; dpkg -s proverif 2>/dev/null | grep Version) > out/proverif_version.txt || true
           python3 proverif/gen.py
           cp proverif/bztid_*.pv out/
           for v in full no_nonce no_holder_binding; do
