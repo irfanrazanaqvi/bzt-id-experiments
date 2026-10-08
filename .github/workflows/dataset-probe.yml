@@ -1,0 +1,34 @@
+name: dataset-probe
+on:
+  push:
+    branches: [probe]
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe candidate dataset URLs (headers only)
+        run: |
+          mkdir -p out
+          for u in \
+            "https://csr.lanl.gov/data/cyber1/" \
+            "https://csr.lanl.gov/data/cyber1/auth.txt.gz" \
+            "https://csr.lanl.gov/data/cyber1/redteam.txt.gz" \
+            "https://kilthub.cmu.edu/articles/dataset/Insider_Threat_Test_Dataset/12841247" \
+            "https://github.com/ashleyshaffer/SOCOFing" \
+            "https://www.kaggle.com/datasets/ruizgara/socofing" \
+            "http://bias.csr.unibo.it/fvc2004/databases.asp" \
+            "http://bias.csr.unibo.it/fvc2004/Downloads/DB1_B.zip" \
+            "https://zenodo.org/records/6782156" ; do
+            echo "== $u"; curl -sSIL --max-time 40 "$u" 2>&1 | grep -iE "^HTTP|content-length|content-type|location|curl:" | tr '\n' ' '; echo
+          done | tee out/probe.txt
+          curl -sSL --max-time 40 https://csr.lanl.gov/data/cyber1/ | sed 's/<[^>]*>/ /g' | tr -s ' \n' | head -80 | tee out/lanl_page.txt
+      - name: Publish
+        if: always()
+        run: |
+          RUN="probe-${{ github.run_number }}"
+          URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          for a in 1 2 3 4 5; do rm -rf res; git clone -q --depth 1 --branch fabric-results "$URL" res; mkdir -p res/$RUN; cp -r out/* res/$RUN/; cd res; git config user.name gh; git config user.email gh@users.noreply.github.com; git add -A; git commit -q -m "probe $RUN"; git push origin fabric-results && break; cd ..; sleep 6; done
