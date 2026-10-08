@@ -1,0 +1,569 @@
+Process 0 (that is, the initial process):
+{1}new skI: key;
+{2}out(net, pk(skI));
+{3}new skH: key;
+{4}insert HonestKeys(pk(skH));
+{5}out(net, pk(skH));
+(
+    {6}!
+    {7}let skI_1: key = skI in
+    {8}in(enrol, (pkh: key,nm: bitstring,dob: bitstring));
+    {9}new s1: bitstring;
+    {10}new s2: bitstring;
+    {11}let c1: bitstring = h(nm,s1) in
+    {12}let c2: bitstring = h(dob,s2) in
+    {13}let cred: bitstring = sign((pkh,c1,c2),skI_1) in
+    {14}insert Active(c1);
+    {15}event Issued(pkh,c1);
+    {16}out(net, aenc((cred,c1,c2,nm,s1,dob,s2),pkh))
+) | (
+    {17}let skH_1: key = skH in
+    {18}let nm_1: bitstring = nm0 in
+    {19}let dob_1: bitstring = dob0 in
+    {20}out(enrol, (pk(skH_1),nm_1,dob_1));
+    {21}in(net, x: bitstring);
+    {22}let (cred_1: bitstring,c1_1: bitstring,c2_1: bitstring,nm1: bitstring,s1_1: bitstring,dob1: bitstring,s2_1: bitstring) = adec(x,skH_1) in
+    {23}!
+    {24}in(net, (vid: bitstring,n: bitstring));
+    {25}event Presents(pk(skH_1),c1_1,n);
+    {26}out(net, (cred_1,nm_1,s1_1,sign((vid,c1_1,c2_1),skH_1)))
+) | (
+    {27}!
+    {28}let vid_1: bitstring = vid0 in
+    {29}let pkI: key = pk(skI) in
+    {30}new n_1: bitstring;
+    {31}out(net, (vid_1,n_1));
+    {32}in(net, (cred_2: bitstring,nmv: bitstring,s1v: bitstring,sg: bitstring));
+    {33}let (pkh_1: key,d1: bitstring,d2: bitstring) = checksign(cred_2,pkI) in
+    {34}if (h(nmv,s1v) = d1) then
+    {35}let (=vid_1,=d1,=d2) = checksign(sg,pkh_1) in
+    {39}get Active(=d1) in
+    {38}get Revoked(=d1) in
+        0
+    else
+        {37}get HonestKeys(=pkh_1) in
+        {36}event AcceptsHonest(pkh_1,d1,n_1)
+)
+
+--  Process 1 (that is, process 0, with let moved downwards):
+{1}new skI: key;
+{2}out(net, pk(skI));
+{3}new skH: key;
+{4}insert HonestKeys(pk(skH));
+{5}out(net, pk(skH));
+(
+    {6}!
+    {8}in(enrol, (pkh: key,nm: bitstring,dob: bitstring));
+    {9}new s1: bitstring;
+    {10}new s2: bitstring;
+    {11}let c1: bitstring = h(nm,s1) in
+    {14}insert Active(c1);
+    {15}event Issued(pkh,c1);
+    {12}let c2: bitstring = h(dob,s2) in
+    {7}let skI_1: key = skI in
+    {13}let cred: bitstring = sign((pkh,c1,c2),skI_1) in
+    {16}out(net, aenc((cred,c1,c2,nm,s1,dob,s2),pkh))
+) | (
+    {19}let dob_1: bitstring = dob0 in
+    {18}let nm_1: bitstring = nm0 in
+    {17}let skH_1: key = skH in
+    {20}out(enrol, (pk(skH_1),nm_1,dob_1));
+    {21}in(net, x: bitstring);
+    {22}let (cred_1: bitstring,c1_1: bitstring,c2_1: bitstring,nm1: bitstring,s1_1: bitstring,dob1: bitstring,s2_1: bitstring) = adec(x,skH_1) in
+    {23}!
+    {24}in(net, (vid: bitstring,n: bitstring));
+    {25}event Presents(pk(skH_1),c1_1,n);
+    {26}out(net, (cred_1,nm_1,s1_1,sign((vid,c1_1,c2_1),skH_1)))
+) | (
+    {27}!
+    {30}new n_1: bitstring;
+    {28}let vid_1: bitstring = vid0 in
+    {31}out(net, (vid_1,n_1));
+    {32}in(net, (cred_2: bitstring,nmv: bitstring,s1v: bitstring,sg: bitstring));
+    {29}let pkI: key = pk(skI) in
+    {33}let (pkh_1: key,d1: bitstring,d2: bitstring) = checksign(cred_2,pkI) in
+    {34}if (h(nmv,s1v) = d1) then
+    {35}let (=vid_1,=d1,=d2) = checksign(sg,pkh_1) in
+    {39}get Active(=d1) in
+    {38}get Revoked(=d1) in
+        0
+    else
+        {37}get HonestKeys(=pkh_1) in
+        {36}event AcceptsHonest(pkh_1,d1,n_1)
+)
+
+-- Query inj-event(AcceptsHonest(pkh_2,c1_2,n_2)) ==> inj-event(Presents(pkh_2,c1_2,n_2)) in process 1.
+Translating the process into Horn clauses...
+Completing...
+Starting query inj-event(AcceptsHonest(pkh_2,c1_2,n_2)) ==> inj-event(Presents(pkh_2,c1_2,n_2))
+goal reachable: b-inj-event(Presents(pk(skH[]),h(nm0[],s1_2),n_2),@occ25_1) && attacker(vid_2) && attacker(n_2) && b-inj-event(Presents(pk(skH[]),h(nm0[],s1_2),n_3),@occ25_2) && attacker(n_3) -> inj-event(AcceptsHonest(pk(skH[]),h(nm0[],s1_2),n_4),@occ36_1)
+Abbreviations:
+s1_2 = s1[dob = dob0[],nm = nm0[],pkh = pk(skH[]),!1 = @sid]
+n_4 = n_1[!1 = @sid_1]
+s2_2 = s2[dob = dob0[],nm = nm0[],pkh = pk(skH[]),!1 = @sid]
+@occ36_1 = @occ36[sg = sign((vid0[],h(nm0[],s1_2),h(dob0[],s2_2)),skH[]),s1v = s1_2,nmv = nm0[],cred_2 = sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),!1 = @sid_1]
+@occ25_1 = @occ25[n = n_2,vid = vid_2,!1 = @sid_2,x = aenc((sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),h(nm0[],s1_2),h(dob0[],s2_2),nm0[],s1_2,dob0[],s2_2),pk(skH[]))]
+@occ25_2 = @occ25[n = n_3,vid = vid0[],!1 = @sid_3,x = aenc((sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),h(nm0[],s1_2),h(dob0[],s2_2),nm0[],s1_2,dob0[],s2_2),pk(skH[]))]
+
+Derivation:
+Abbreviations:
+s1_2 = s1[dob = dob0[],nm = nm0[],pkh = pk(skH[]),!1 = @sid]
+n_2 = n_1[!1 = @sid_1]
+s2_2 = s2[dob = dob0[],nm = nm0[],pkh = pk(skH[]),!1 = @sid]
+@occ36_1 = @occ36[sg = sign((vid0[],h(nm0[],s1_2),h(dob0[],s2_2)),skH[]),s1v = s1_2,nmv = nm0[],cred_2 = sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),!1 = @sid_1]
+@occ25_1 = @occ25[n = n_3,vid = vid_2,!1 = @sid_2,x = aenc((sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),h(nm0[],s1_2),h(dob0[],s2_2),nm0[],s1_2,dob0[],s2_2),pk(skH[]))]
+@occ25_2 = @occ25[n = n_4,vid = vid0[],!1 = @sid_3,x = aenc((sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),h(nm0[],s1_2),h(dob0[],s2_2),nm0[],s1_2,dob0[],s2_2),pk(skH[]))]
+
+1. The message (pk(skH[]),nm0[],dob0[]) may be sent on channel enrol[] at output {20}.
+mess(enrol[],(pk(skH[]),nm0[],dob0[])).
+
+2. The message (pk(skH[]),nm0[],dob0[]) that may be sent on channel enrol[] by 1 may be received at input {8}.
+So the message aenc((sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),h(nm0[],s1_2),h(dob0[],s2_2),nm0[],s1_2,dob0[],s2_2),pk(skH[])) may be sent to the attacker at output {16}.
+attacker(aenc((sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),h(nm0[],s1_2),h(dob0[],s2_2),nm0[],s1_2,dob0[],s2_2),pk(skH[]))).
+
+3. We assume as hypothesis that
+attacker(n_4).
+
+4. The attacker initially knows vid0[].
+attacker(vid0[]).
+
+5. By 4, the attacker may know vid0[].
+By 3, the attacker may know n_4.
+Using the function 2-tuple the attacker may obtain (vid0[],n_4).
+attacker((vid0[],n_4)).
+
+6. The message aenc((sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),h(nm0[],s1_2),h(dob0[],s2_2),nm0[],s1_2,dob0[],s2_2),pk(skH[])) that the attacker may have by 2 may be received at input {21}.
+The message (vid0[],n_4) that the attacker may have by 5 may be received at input {24}.
+The event Presents(pk(skH[]),h(nm0[],s1_2),n_4) (with occurrence name @occ25_2) may be executed at {25}.
+So the message (sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid0[],h(nm0[],s1_2),h(dob0[],s2_2)),skH[])) may be sent to the attacker at output {26}.
+attacker((sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid0[],h(nm0[],s1_2),h(dob0[],s2_2)),skH[]))).
+
+7. By 6, the attacker may know (sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid0[],h(nm0[],s1_2),h(dob0[],s2_2)),skH[])).
+Using the function 4-proj-4-tuple the attacker may obtain sign((vid0[],h(nm0[],s1_2),h(dob0[],s2_2)),skH[]).
+attacker(sign((vid0[],h(nm0[],s1_2),h(dob0[],s2_2)),skH[])).
+
+8. We assume as hypothesis that
+attacker(n_3).
+
+9. We assume as hypothesis that
+attacker(vid_2).
+
+10. By 9, the attacker may know vid_2.
+By 8, the attacker may know n_3.
+Using the function 2-tuple the attacker may obtain (vid_2,n_3).
+attacker((vid_2,n_3)).
+
+11. The message aenc((sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),h(nm0[],s1_2),h(dob0[],s2_2),nm0[],s1_2,dob0[],s2_2),pk(skH[])) that the attacker may have by 2 may be received at input {21}.
+The message (vid_2,n_3) that the attacker may have by 10 may be received at input {24}.
+The event Presents(pk(skH[]),h(nm0[],s1_2),n_3) (with occurrence name @occ25_1) may be executed at {25}.
+So the message (sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid_2,h(nm0[],s1_2),h(dob0[],s2_2)),skH[])) may be sent to the attacker at output {26}.
+attacker((sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid_2,h(nm0[],s1_2),h(dob0[],s2_2)),skH[]))).
+
+12. By 11, the attacker may know (sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid_2,h(nm0[],s1_2),h(dob0[],s2_2)),skH[])).
+Using the function 3-proj-4-tuple the attacker may obtain s1_2.
+attacker(s1_2).
+
+13. By 11, the attacker may know (sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid_2,h(nm0[],s1_2),h(dob0[],s2_2)),skH[])).
+Using the function 2-proj-4-tuple the attacker may obtain nm0[].
+attacker(nm0[]).
+
+14. By 6, the attacker may know (sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid0[],h(nm0[],s1_2),h(dob0[],s2_2)),skH[])).
+Using the function 1-proj-4-tuple the attacker may obtain sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]).
+attacker(sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[])).
+
+15. By 14, the attacker may know sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]).
+By 13, the attacker may know nm0[].
+By 12, the attacker may know s1_2.
+By 7, the attacker may know sign((vid0[],h(nm0[],s1_2),h(dob0[],s2_2)),skH[]).
+Using the function 4-tuple the attacker may obtain (sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid0[],h(nm0[],s1_2),h(dob0[],s2_2)),skH[])).
+attacker((sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid0[],h(nm0[],s1_2),h(dob0[],s2_2)),skH[]))).
+
+16. The message (pk(skH[]),nm0[],dob0[]) that may be sent on channel enrol[] by 1 may be received at input {8}.
+So the entry Active(h(nm0[],s1_2)) may be inserted in a table at insert {14}.
+table(Active(h(nm0[],s1_2))).
+
+17. The entry HonestKeys(pk(skH[])) may be inserted in a table at insert {4}.
+table(HonestKeys(pk(skH[]))).
+
+18. The message (sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid0[],h(nm0[],s1_2),h(dob0[],s2_2)),skH[])) that the attacker may have by 15 may be received at input {32}.
+The entry Active(h(nm0[],s1_2)) that may be in a table by 16 may be read at get {39}.
+The entry HonestKeys(pk(skH[])) that may be in a table by 17 may be read at get {37}.
+So event AcceptsHonest(pk(skH[]),h(nm0[],s1_2),n_2) may be executed at {36} in session @sid_1.
+inj-event(AcceptsHonest(pk(skH[]),h(nm0[],s1_2),n_2),@occ36_1).
+
+19. By 18, inj-event(AcceptsHonest(pk(skH[]),h(nm0[],s1_2),n_2),@occ36_1).
+The goal is reached, represented in the following fact:
+inj-event(AcceptsHonest(pk(skH[]),h(nm0[],s1_2),n_2),@occ36_1).
+
+
+A more detailed output of the traces is available with
+  set traceDisplay = long.
+
+new skI: key creating skI_2 at {1}
+
+out(net, ~M) with ~M = pk(skI_2) at {2}
+
+new skH: key creating skH_2 at {3}
+
+insert HonestKeys(pk(skH_2)) at {4}
+
+out(net, ~M_1) with ~M_1 = pk(skH_2) at {5}
+
+new n_1: bitstring creating n_5 at {30} in copy a
+
+out(net, (~M_2,~M_3)) with ~M_2 = vid0, ~M_3 = n_5 at {31} in copy a
+
+out(enrol, (pk(skH_2),nm0,dob0)) at {20} received at {8} in copy a_1
+
+new s1: bitstring creating s1_3 at {9} in copy a_1
+
+new s2: bitstring creating s2_3 at {10} in copy a_1
+
+insert Active(h(nm0,s1_3)) at {14} in copy a_1
+
+event Issued(pk(skH_2),h(nm0,s1_3)) at {15} in copy a_1
+
+out(net, ~M_4) with ~M_4 = aenc((sign((pk(skH_2),h(nm0,s1_3),h(dob0,s2_3)),skI_2),h(nm0,s1_3),h(dob0,s2_3),nm0,s1_3,dob0,s2_3),pk(skH_2)) at {16} in copy a_1
+
+in(net, ~M_4) with ~M_4 = aenc((sign((pk(skH_2),h(nm0,s1_3),h(dob0,s2_3)),skI_2),h(nm0,s1_3),h(dob0,s2_3),nm0,s1_3,dob0,s2_3),pk(skH_2)) at {21}
+
+in(net, (a_2,a_3)) at {24} in copy a_4
+
+event Presents(pk(skH_2),h(nm0,s1_3),a_3) at {25} in copy a_4
+
+out(net, (~M_5,~M_6,~M_7,~M_8)) with ~M_5 = sign((pk(skH_2),h(nm0,s1_3),h(dob0,s2_3)),skI_2), ~M_6 = nm0, ~M_7 = s1_3, ~M_8 = sign((a_2,h(nm0,s1_3),h(dob0,s2_3)),skH_2) at {26} in copy a_4
+
+in(net, (vid0,a_5)) at {24} in copy a_6
+
+event Presents(pk(skH_2),h(nm0,s1_3),a_5) at {25} in copy a_6
+
+out(net, (~M_9,~M_10,~M_11,~M_12)) with ~M_9 = sign((pk(skH_2),h(nm0,s1_3),h(dob0,s2_3)),skI_2), ~M_10 = nm0, ~M_11 = s1_3, ~M_12 = sign((vid0,h(nm0,s1_3),h(dob0,s2_3)),skH_2) at {26} in copy a_6
+
+in(net, (~M_5,~M_6,~M_7,~M_12)) with ~M_5 = sign((pk(skH_2),h(nm0,s1_3),h(dob0,s2_3)),skI_2), ~M_6 = nm0, ~M_7 = s1_3, ~M_12 = sign((vid0,h(nm0,s1_3),h(dob0,s2_3)),skH_2) at {32} in copy a
+
+get Active(h(nm0,s1_3)) at {39} in copy a
+
+get Revoked(=h(nm0,s1_3)): else branch taken at {38} in copy a
+
+get HonestKeys(pk(skH_2)) at {37} in copy a
+
+event AcceptsHonest(pk(skH_2),h(nm0,s1_3),n_5) at {36} in copy a (goal)
+
+The event AcceptsHonest(pk(skH_2),h(nm0,s1_3),n_5) is executed at {36} in copy a.
+A trace has been found.
+RESULT inj-event(AcceptsHonest(pkh_2,c1_2,n_2)) ==> inj-event(Presents(pkh_2,c1_2,n_2)) is false.
+RESULT (even event(AcceptsHonest(pkh_2,c1_2,n_2)) ==> event(Presents(pkh_2,c1_2,n_2)) is false.)
+-- Query event(AcceptsHonest(pkh_2,c1_2,n_2)) ==> event(Issued(pkh_2,c1_2)) in process 1.
+Translating the process into Horn clauses...
+Completing...
+Starting query event(AcceptsHonest(pkh_2,c1_2,n_2)) ==> event(Issued(pkh_2,c1_2))
+goal reachable: b-event(Issued(pk(skH[]),h(nm0[],s1_2))) -> event(AcceptsHonest(pk(skH[]),h(nm0[],s1_2),n_2))
+Abbreviations:
+s1_2 = s1[dob = dob0[],nm = nm0[],pkh = pk(skH[]),!1 = @sid]
+n_2 = n_1[!1 = @sid_1]
+RESULT event(AcceptsHonest(pkh_2,c1_2,n_2)) ==> event(Issued(pkh_2,c1_2)) is true.
+-- Query not attacker(dob0[]) in process 1.
+Translating the process into Horn clauses...
+Completing...
+Starting query not attacker(dob0[])
+RESULT not attacker(dob0[]) is true.
+-- Query not attacker(nm0[]) in process 1.
+Translating the process into Horn clauses...
+Completing...
+Starting query not attacker(nm0[])
+goal reachable: attacker(nm0[])
+
+Derivation:
+Abbreviations:
+s1_2 = s1[dob = dob0[],nm = nm0[],pkh = pk(skH[]),!1 = @sid]
+s2_2 = s2[dob = dob0[],nm = nm0[],pkh = pk(skH[]),!1 = @sid]
+
+1. The message (pk(skH[]),nm0[],dob0[]) may be sent on channel enrol[] at output {20}.
+mess(enrol[],(pk(skH[]),nm0[],dob0[])).
+
+2. The message (pk(skH[]),nm0[],dob0[]) that may be sent on channel enrol[] by 1 may be received at input {8}.
+So the message aenc((sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),h(nm0[],s1_2),h(dob0[],s2_2),nm0[],s1_2,dob0[],s2_2),pk(skH[])) may be sent to the attacker at output {16}.
+attacker(aenc((sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),h(nm0[],s1_2),h(dob0[],s2_2),nm0[],s1_2,dob0[],s2_2),pk(skH[]))).
+
+3. The attacker has some term n_2.
+attacker(n_2).
+
+4. The attacker has some term vid_2.
+attacker(vid_2).
+
+5. By 4, the attacker may know vid_2.
+By 3, the attacker may know n_2.
+Using the function 2-tuple the attacker may obtain (vid_2,n_2).
+attacker((vid_2,n_2)).
+
+6. The message aenc((sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),h(nm0[],s1_2),h(dob0[],s2_2),nm0[],s1_2,dob0[],s2_2),pk(skH[])) that the attacker may have by 2 may be received at input {21}.
+The message (vid_2,n_2) that the attacker may have by 5 may be received at input {24}.
+So the message (sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid_2,h(nm0[],s1_2),h(dob0[],s2_2)),skH[])) may be sent to the attacker at output {26}.
+attacker((sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid_2,h(nm0[],s1_2),h(dob0[],s2_2)),skH[]))).
+
+7. By 6, the attacker may know (sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid_2,h(nm0[],s1_2),h(dob0[],s2_2)),skH[])).
+Using the function 2-proj-4-tuple the attacker may obtain nm0[].
+attacker(nm0[]).
+
+8. By 7, attacker(nm0[]).
+The goal is reached, represented in the following fact:
+attacker(nm0[]).
+
+
+A more detailed output of the traces is available with
+  set traceDisplay = long.
+
+new skI: key creating skI_2 at {1}
+
+out(net, ~M) with ~M = pk(skI_2) at {2}
+
+new skH: key creating skH_2 at {3}
+
+insert HonestKeys(pk(skH_2)) at {4}
+
+out(net, ~M_1) with ~M_1 = pk(skH_2) at {5}
+
+out(enrol, (pk(skH_2),nm0,dob0)) at {20} received at {8} in copy a
+
+new s1: bitstring creating s1_3 at {9} in copy a
+
+new s2: bitstring creating s2_3 at {10} in copy a
+
+insert Active(h(nm0,s1_3)) at {14} in copy a
+
+event Issued(pk(skH_2),h(nm0,s1_3)) at {15} in copy a
+
+out(net, ~M_2) with ~M_2 = aenc((sign((pk(skH_2),h(nm0,s1_3),h(dob0,s2_3)),skI_2),h(nm0,s1_3),h(dob0,s2_3),nm0,s1_3,dob0,s2_3),pk(skH_2)) at {16} in copy a
+
+in(net, ~M_2) with ~M_2 = aenc((sign((pk(skH_2),h(nm0,s1_3),h(dob0,s2_3)),skI_2),h(nm0,s1_3),h(dob0,s2_3),nm0,s1_3,dob0,s2_3),pk(skH_2)) at {21}
+
+in(net, (a_1,a_2)) at {24} in copy a_3
+
+event Presents(pk(skH_2),h(nm0,s1_3),a_2) at {25} in copy a_3
+
+out(net, (~M_3,~M_4,~M_5,~M_6)) with ~M_3 = sign((pk(skH_2),h(nm0,s1_3),h(dob0,s2_3)),skI_2), ~M_4 = nm0, ~M_5 = s1_3, ~M_6 = sign((a_1,h(nm0,s1_3),h(dob0,s2_3)),skH_2) at {26} in copy a_3
+
+The attacker has the message ~M_4 = nm0.
+A trace has been found.
+RESULT not attacker(nm0[]) is false.
+-- Query not event(AcceptsHonest(pkh_2,c1_2,n_2)) in process 1.
+Translating the process into Horn clauses...
+Completing...
+Starting query not event(AcceptsHonest(pkh_2,c1_2,n_2))
+goal reachable: event(AcceptsHonest(pk(skH[]),h(nm0[],s1_2),n_2))
+Abbreviations:
+s1_2 = s1[dob = dob0[],nm = nm0[],pkh = pk(skH[]),!1 = @sid]
+n_2 = n_1[!1 = @sid_1]
+
+Derivation:
+Abbreviations:
+s1_2 = s1[dob = dob0[],nm = nm0[],pkh = pk(skH[]),!1 = @sid]
+n_2 = n_1[!1 = @sid_1]
+s2_2 = s2[dob = dob0[],nm = nm0[],pkh = pk(skH[]),!1 = @sid]
+s1_3 = s1[dob = dob0[],nm = nm0[],pkh = pk(skH[]),!1 = @sid_2]
+s2_3 = s2[dob = dob0[],nm = nm0[],pkh = pk(skH[]),!1 = @sid_2]
+
+1. The message (pk(skH[]),nm0[],dob0[]) may be sent on channel enrol[] at output {20}.
+mess(enrol[],(pk(skH[]),nm0[],dob0[])).
+
+2. The message (pk(skH[]),nm0[],dob0[]) that may be sent on channel enrol[] by 1 may be received at input {8}.
+So the message aenc((sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),h(nm0[],s1_2),h(dob0[],s2_2),nm0[],s1_2,dob0[],s2_2),pk(skH[])) may be sent to the attacker at output {16}.
+attacker(aenc((sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),h(nm0[],s1_2),h(dob0[],s2_2),nm0[],s1_2,dob0[],s2_2),pk(skH[]))).
+
+3. The attacker has some term n_3.
+attacker(n_3).
+
+4. The attacker initially knows vid0[].
+attacker(vid0[]).
+
+5. By 4, the attacker may know vid0[].
+By 3, the attacker may know n_3.
+Using the function 2-tuple the attacker may obtain (vid0[],n_3).
+attacker((vid0[],n_3)).
+
+6. The message aenc((sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),h(nm0[],s1_2),h(dob0[],s2_2),nm0[],s1_2,dob0[],s2_2),pk(skH[])) that the attacker may have by 2 may be received at input {21}.
+The message (vid0[],n_3) that the attacker may have by 5 may be received at input {24}.
+So the message (sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid0[],h(nm0[],s1_2),h(dob0[],s2_2)),skH[])) may be sent to the attacker at output {26}.
+attacker((sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid0[],h(nm0[],s1_2),h(dob0[],s2_2)),skH[]))).
+
+7. By 6, the attacker may know (sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid0[],h(nm0[],s1_2),h(dob0[],s2_2)),skH[])).
+Using the function 4-proj-4-tuple the attacker may obtain sign((vid0[],h(nm0[],s1_2),h(dob0[],s2_2)),skH[]).
+attacker(sign((vid0[],h(nm0[],s1_2),h(dob0[],s2_2)),skH[])).
+
+8. The attacker has some term n_4.
+attacker(n_4).
+
+9. The attacker has some term vid_2.
+attacker(vid_2).
+
+10. By 9, the attacker may know vid_2.
+By 8, the attacker may know n_4.
+Using the function 2-tuple the attacker may obtain (vid_2,n_4).
+attacker((vid_2,n_4)).
+
+11. The message aenc((sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),h(nm0[],s1_2),h(dob0[],s2_2),nm0[],s1_2,dob0[],s2_2),pk(skH[])) that the attacker may have by 2 may be received at input {21}.
+The message (vid_2,n_4) that the attacker may have by 10 may be received at input {24}.
+So the message (sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid_2,h(nm0[],s1_2),h(dob0[],s2_2)),skH[])) may be sent to the attacker at output {26}.
+attacker((sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid_2,h(nm0[],s1_2),h(dob0[],s2_2)),skH[]))).
+
+12. By 11, the attacker may know (sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid_2,h(nm0[],s1_2),h(dob0[],s2_2)),skH[])).
+Using the function 3-proj-4-tuple the attacker may obtain s1_2.
+attacker(s1_2).
+
+13. The message (pk(skH[]),nm0[],dob0[]) that may be sent on channel enrol[] by 1 may be received at input {8}.
+So the message aenc((sign((pk(skH[]),h(nm0[],s1_3),h(dob0[],s2_3)),skI[]),h(nm0[],s1_3),h(dob0[],s2_3),nm0[],s1_3,dob0[],s2_3),pk(skH[])) may be sent to the attacker at output {16}.
+attacker(aenc((sign((pk(skH[]),h(nm0[],s1_3),h(dob0[],s2_3)),skI[]),h(nm0[],s1_3),h(dob0[],s2_3),nm0[],s1_3,dob0[],s2_3),pk(skH[]))).
+
+14. The attacker has some term n_5.
+attacker(n_5).
+
+15. The attacker has some term vid_3.
+attacker(vid_3).
+
+16. By 15, the attacker may know vid_3.
+By 14, the attacker may know n_5.
+Using the function 2-tuple the attacker may obtain (vid_3,n_5).
+attacker((vid_3,n_5)).
+
+17. The message aenc((sign((pk(skH[]),h(nm0[],s1_3),h(dob0[],s2_3)),skI[]),h(nm0[],s1_3),h(dob0[],s2_3),nm0[],s1_3,dob0[],s2_3),pk(skH[])) that the attacker may have by 13 may be received at input {21}.
+The message (vid_3,n_5) that the attacker may have by 16 may be received at input {24}.
+So the message (sign((pk(skH[]),h(nm0[],s1_3),h(dob0[],s2_3)),skI[]),nm0[],s1_3,sign((vid_3,h(nm0[],s1_3),h(dob0[],s2_3)),skH[])) may be sent to the attacker at output {26}.
+attacker((sign((pk(skH[]),h(nm0[],s1_3),h(dob0[],s2_3)),skI[]),nm0[],s1_3,sign((vid_3,h(nm0[],s1_3),h(dob0[],s2_3)),skH[]))).
+
+18. By 17, the attacker may know (sign((pk(skH[]),h(nm0[],s1_3),h(dob0[],s2_3)),skI[]),nm0[],s1_3,sign((vid_3,h(nm0[],s1_3),h(dob0[],s2_3)),skH[])).
+Using the function 2-proj-4-tuple the attacker may obtain nm0[].
+attacker(nm0[]).
+
+19. The attacker has some term n_6.
+attacker(n_6).
+
+20. The attacker has some term vid_4.
+attacker(vid_4).
+
+21. By 20, the attacker may know vid_4.
+By 19, the attacker may know n_6.
+Using the function 2-tuple the attacker may obtain (vid_4,n_6).
+attacker((vid_4,n_6)).
+
+22. The message aenc((sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),h(nm0[],s1_2),h(dob0[],s2_2),nm0[],s1_2,dob0[],s2_2),pk(skH[])) that the attacker may have by 2 may be received at input {21}.
+The message (vid_4,n_6) that the attacker may have by 21 may be received at input {24}.
+So the message (sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid_4,h(nm0[],s1_2),h(dob0[],s2_2)),skH[])) may be sent to the attacker at output {26}.
+attacker((sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid_4,h(nm0[],s1_2),h(dob0[],s2_2)),skH[]))).
+
+23. By 22, the attacker may know (sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid_4,h(nm0[],s1_2),h(dob0[],s2_2)),skH[])).
+Using the function 1-proj-4-tuple the attacker may obtain sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]).
+attacker(sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[])).
+
+24. By 23, the attacker may know sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]).
+By 18, the attacker may know nm0[].
+By 12, the attacker may know s1_2.
+By 7, the attacker may know sign((vid0[],h(nm0[],s1_2),h(dob0[],s2_2)),skH[]).
+Using the function 4-tuple the attacker may obtain (sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid0[],h(nm0[],s1_2),h(dob0[],s2_2)),skH[])).
+attacker((sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid0[],h(nm0[],s1_2),h(dob0[],s2_2)),skH[]))).
+
+25. The message (pk(skH[]),nm0[],dob0[]) that may be sent on channel enrol[] by 1 may be received at input {8}.
+So the entry Active(h(nm0[],s1_2)) may be inserted in a table at insert {14}.
+table(Active(h(nm0[],s1_2))).
+
+26. The entry HonestKeys(pk(skH[])) may be inserted in a table at insert {4}.
+table(HonestKeys(pk(skH[]))).
+
+27. The message (sign((pk(skH[]),h(nm0[],s1_2),h(dob0[],s2_2)),skI[]),nm0[],s1_2,sign((vid0[],h(nm0[],s1_2),h(dob0[],s2_2)),skH[])) that the attacker may have by 24 may be received at input {32}.
+The entry Active(h(nm0[],s1_2)) that may be in a table by 25 may be read at get {39}.
+The entry HonestKeys(pk(skH[])) that may be in a table by 26 may be read at get {37}.
+So event AcceptsHonest(pk(skH[]),h(nm0[],s1_2),n_2) may be executed at {36}.
+event(AcceptsHonest(pk(skH[]),h(nm0[],s1_2),n_2)).
+
+28. By 27, event(AcceptsHonest(pk(skH[]),h(nm0[],s1_2),n_2)).
+The goal is reached, represented in the following fact:
+event(AcceptsHonest(pk(skH[]),h(nm0[],s1_2),n_2)).
+
+
+Unified @sid_2 with @sid
+The clause after UnifyDerivationPrecise is
+event(AcceptsHonest(pk(skH[]),h(nm0[],s1[dob = dob0[],nm = nm0[],pkh = pk(skH[]),!1 = @sid]),n_1[!1 = @sid_1]))
+This clause still contradicts the query.
+A more detailed output of the traces is available with
+  set traceDisplay = long.
+
+new skI: key creating skI_2 at {1}
+
+out(net, ~M) with ~M = pk(skI_2) at {2}
+
+new skH: key creating skH_2 at {3}
+
+insert HonestKeys(pk(skH_2)) at {4}
+
+out(net, ~M_1) with ~M_1 = pk(skH_2) at {5}
+
+new n_1: bitstring creating n_7 at {30} in copy a
+
+out(net, (~M_2,~M_3)) with ~M_2 = vid0, ~M_3 = n_7 at {31} in copy a
+
+out(enrol, (pk(skH_2),nm0,dob0)) at {20} received at {8} in copy a_1
+
+new s1: bitstring creating s1_4 at {9} in copy a_1
+
+new s2: bitstring creating s2_4 at {10} in copy a_1
+
+insert Active(h(nm0,s1_4)) at {14} in copy a_1
+
+event Issued(pk(skH_2),h(nm0,s1_4)) at {15} in copy a_1
+
+out(net, ~M_4) with ~M_4 = aenc((sign((pk(skH_2),h(nm0,s1_4),h(dob0,s2_4)),skI_2),h(nm0,s1_4),h(dob0,s2_4),nm0,s1_4,dob0,s2_4),pk(skH_2)) at {16} in copy a_1
+
+in(net, ~M_4) with ~M_4 = aenc((sign((pk(skH_2),h(nm0,s1_4),h(dob0,s2_4)),skI_2),h(nm0,s1_4),h(dob0,s2_4),nm0,s1_4,dob0,s2_4),pk(skH_2)) at {21}
+
+in(net, (a_2,a_3)) at {24} in copy a_4
+
+event Presents(pk(skH_2),h(nm0,s1_4),a_3) at {25} in copy a_4
+
+out(net, (~M_5,~M_6,~M_7,~M_8)) with ~M_5 = sign((pk(skH_2),h(nm0,s1_4),h(dob0,s2_4)),skI_2), ~M_6 = nm0, ~M_7 = s1_4, ~M_8 = sign((a_2,h(nm0,s1_4),h(dob0,s2_4)),skH_2) at {26} in copy a_4
+
+in(net, (a_5,a_6)) at {24} in copy a_7
+
+event Presents(pk(skH_2),h(nm0,s1_4),a_6) at {25} in copy a_7
+
+out(net, (~M_9,~M_10,~M_11,~M_12)) with ~M_9 = sign((pk(skH_2),h(nm0,s1_4),h(dob0,s2_4)),skI_2), ~M_10 = nm0, ~M_11 = s1_4, ~M_12 = sign((a_5,h(nm0,s1_4),h(dob0,s2_4)),skH_2) at {26} in copy a_7
+
+in(net, (a_8,a_9)) at {24} in copy a_10
+
+event Presents(pk(skH_2),h(nm0,s1_4),a_9) at {25} in copy a_10
+
+out(net, (~M_13,~M_14,~M_15,~M_16)) with ~M_13 = sign((pk(skH_2),h(nm0,s1_4),h(dob0,s2_4)),skI_2), ~M_14 = nm0, ~M_15 = s1_4, ~M_16 = sign((a_8,h(nm0,s1_4),h(dob0,s2_4)),skH_2) at {26} in copy a_10
+
+in(net, (vid0,a_11)) at {24} in copy a_12
+
+event Presents(pk(skH_2),h(nm0,s1_4),a_11) at {25} in copy a_12
+
+out(net, (~M_17,~M_18,~M_19,~M_20)) with ~M_17 = sign((pk(skH_2),h(nm0,s1_4),h(dob0,s2_4)),skI_2), ~M_18 = nm0, ~M_19 = s1_4, ~M_20 = sign((vid0,h(nm0,s1_4),h(dob0,s2_4)),skH_2) at {26} in copy a_12
+
+in(net, (~M_5,~M_6,~M_7,~M_20)) with ~M_5 = sign((pk(skH_2),h(nm0,s1_4),h(dob0,s2_4)),skI_2), ~M_6 = nm0, ~M_7 = s1_4, ~M_20 = sign((vid0,h(nm0,s1_4),h(dob0,s2_4)),skH_2) at {32} in copy a
+
+get Active(h(nm0,s1_4)) at {39} in copy a
+
+get Revoked(=h(nm0,s1_4)): else branch taken at {38} in copy a
+
+get HonestKeys(pk(skH_2)) at {37} in copy a
+
+event AcceptsHonest(pk(skH_2),h(nm0,s1_4),n_7) at {36} in copy a (goal)
+
+The event AcceptsHonest(pk(skH_2),h(nm0,s1_4),n_7) is executed at {36} in copy a.
+A trace has been found.
+RESULT not event(AcceptsHonest(pkh_2,c1_2,n_2)) is false.
+
+--------------------------------------------------------------
+Verification summary:
+
+Query inj-event(AcceptsHonest(pkh_2,c1_2,n_2)) ==> inj-event(Presents(pkh_2,c1_2,n_2)) is false.
+
+Query event(AcceptsHonest(pkh_2,c1_2,n_2)) ==> event(Issued(pkh_2,c1_2)) is true.
+
+Query not attacker(dob0[]) is true.
+
+Query not attacker(nm0[]) is false.
+
+Query not event(AcceptsHonest(pkh_2,c1_2,n_2)) is false.
+
+--------------------------------------------------------------
+
