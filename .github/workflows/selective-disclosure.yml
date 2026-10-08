@@ -1,0 +1,52 @@
+name: selective-disclosure
+on:
+  push:
+    branches: [zk]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  bench:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: System
+        run: mkdir -p out && { uname -a; nproc; node --version; grep -m1 "model name" /proc/cpuinfo; } | tee out/system.txt
+      - name: Install
+        run: |
+          cd zk && npm install --no-audit --no-fund 2>&1 | tail -3
+          curl -sSL -o /usr/local/bin/circom https://github.com/iden3/circom/releases/download/v2.1.9/circom-linux-amd64 && chmod +x /usr/local/bin/circom && circom --version | tee ../out/circom_version.txt
+      - name: BBS+ benchmark
+        run: cd zk && node bench_bbs.mjs ../out/bbs.json 2>&1 | tee ../out/bbs.log
+      - name: Groth16 setup (circuit compile + trusted setup, local ceremony for benchmarking only)
+        run: |
+          cd zk && mkdir -p build && circom age.circom --r1cs --wasm --sym -l node_modules -o build 2>&1 | tee ../out/circom_compile.log
+          npx snarkjs r1cs info build/age.r1cs 2>&1 | tee ../out/r1cs_info.txt
+          S="npx snarkjs"
+          $S powersoftau new bn128 12 build/pot_0.ptau 2>&1 | tail -1
+          $S powersoftau contribute build/pot_0.ptau build/pot_1.ptau --name="bench" -e="bzt-id-benchmark-entropy" 2>&1 | tail -1
+          $S powersoftau prepare phase2 build/pot_1.ptau build/pot_f.ptau 2>&1 | tail -1
+          /usr/bin/time -v $S groth16 setup build/age.r1cs build/pot_f.ptau build/age_0.zkey 2> ../out/setup_time.txt | tail -1
+          $S zkey contribute build/age_0.zkey build/age.zkey --name="bench" -e="more-entropy" 2>&1 | tail -1
+          $S zkey export verificationkey build/age.zkey build/vkey.json
+          ls -la build | tee ../out/build_files.txt
+      - name: Groth16 benchmark
+        run: cd zk && node bench_zk.js build/age_js/age.wasm build/age.zkey build/vkey.json ../out/zk.json 2>&1 | tee ../out/zk.log
+      - name: Publish
+        if: always()
+        run: |
+          RUN="zk-run-${{ github.run_number }}"
+          URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          for attempt in 1 2 3 4 5 6; do
+            rm -rf res
+            if git ls-remote --exit-code --heads "$URL" fabric-results >/dev/null 2>&1; then git clone -q --depth 1 --branch fabric-results "$URL" res; else mkdir res && (cd res && git init -q -b fabric-results && git remote add origin "$URL"); fi
+            mkdir -p "res/$RUN"; cp -r out/* "res/$RUN/" || true
+            cd res; git config user.name github-actions; git config user.email github-actions@users.noreply.github.com
+            git add -A; git commit -q -m "Selective disclosure $RUN (${{ job.status }})" || true
+            if git push origin fabric-results; then break; fi
+            cd ..; sleep $((attempt * 5))
+          done
