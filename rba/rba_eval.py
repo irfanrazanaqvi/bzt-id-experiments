@@ -98,6 +98,24 @@ for lab in ["y_ip", "y_ato"]:
         m = mk().fit(X[~test], y[~test]); p = m.predict_proba(X[test])[:, 1]; yt = y[test]
         rows.append({"label": lab, "scheme": nm, "n": len(yt), "positives": int(yt.sum()), "AUC": roc_auc_score(yt, p), "AUC_lo": np.nan, "AUC_hi": np.nan,
                      "recall@FPR=1%": float((p[yt == 1] >= np.quantile(p[yt == 0], .99)).mean()), "recall@FPR=5%": float((p[yt == 1] >= np.quantile(p[yt == 0], .95)).mean()), "recall@ALLOW<0.75": np.nan, "FPR@ALLOW<0.75": np.nan})
+# ---- learned weights in the engine's own form (trust = 1 - weighted anomaly), fitted on training users only, threshold recalibrated on training users at 5% FPR
+K = ["geo_new", "device_new", "asn_rare", "failed"]
+for lab in ["y_ip", "y_ato"]:
+    y = h[lab].values
+    if y[~test].sum() < 5 or y[test].sum() == 0: continue
+    lr = LogisticRegression(max_iter=1000, class_weight="balanced", C=1.0).fit(X[~test], y[~test])
+    w = np.clip(lr.coef_[0], 0, None); w = w / w.sum() if w.sum() > 0 else np.ones(4) / 4   # negative coefficients clipped to 0 (all factors are anomaly-oriented)
+    anom_tr = X[~test] @ w; anom_te = X[test] @ w
+    th = np.quantile(anom_tr[y[~test] == 0], .95)     # flag if anomaly above the 95th percentile of legitimate training logins
+    yt = y[test]
+    rows.append({"label": lab, "scheme": "Engine, learned weights + recalibrated threshold (user-split) w=" + "/".join(f"{x:.2f}" for x in w), "n": len(yt), "positives": int(yt.sum()),
+                 "AUC": roc_auc_score(yt, anom_te), "AUC_lo": np.nan, "AUC_hi": np.nan, "recall@FPR=1%": float((anom_te[yt == 1] >= np.quantile(anom_tr[y[~test] == 0], .99)).mean()),
+                 "recall@FPR=5%": float((anom_te[yt == 1] > th).mean()), "recall@ALLOW<0.75": float((anom_te[yt == 1] > th).mean()), "FPR@ALLOW<0.75": float((anom_te[yt == 0] > th).mean())})
+    # fixed-weight engine on the same test users, for a like-for-like comparison, and leave-one-factor-out ablation (fixed weights)
+    for nm, ks in [("Engine fixed weights, test users only", K)] + [("Ablation: engine without " + d_, [k for k in K if k != d_]) for d_ in K]:
+        sc = trust(h, ks)[test]
+        rows.append({"label": lab, "scheme": nm, "n": len(yt), "positives": int(yt.sum()), "AUC": roc_auc_score(yt, -sc), "AUC_lo": np.nan, "AUC_hi": np.nan,
+                     "recall@FPR=1%": rec_at_fpr(sc, yt, .01), "recall@FPR=5%": rec_at_fpr(sc, yt, .05), "recall@ALLOW<0.75": float((sc[yt == 1] < .75).mean()), "FPR@ALLOW<0.75": float((sc[yt == 0] < .75).mean())})
 res = pd.DataFrame(rows); res.to_csv(os.path.join(OUT, "rba_summary.csv"), index=False); print(res.round(4).to_string())
 info = {"rows_total": tot, "attack_ip_rows_total": n_attack, "ato_rows_total": n_ato, "sample_rows": int(len(d)), "sample_users": int(d["User ID"].nunique()), "history_rows": int(len(h)),
         "history_attack_ip": int(h.y_ip.sum()), "history_ato": int(h.y_ato.sum()), "feature_means_attack_vs_legit": {k: [float(h.loc[h.y_ip == 1, k].mean()), float(h.loc[h.y_ip == 0, k].mean())] for k in ["geo_new", "device_new", "asn_rare", "failed"]}}

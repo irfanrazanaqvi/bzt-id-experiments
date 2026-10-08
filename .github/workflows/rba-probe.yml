@@ -1,7 +1,7 @@
 name: rba-eval
 on:
   push:
-    branches: [rba]
+    branches: [rba2]
   workflow_dispatch:
 permissions:
   contents: write
@@ -24,12 +24,12 @@ jobs:
           cp data/README.md out/rba_README.md; cp data/RESULTS.md out/rba_RESULTS.md; F=data/rba-dataset.csv; echo "$F" | tee out/csvname.txt
           head -5 "$F" | tee out/head.txt
           wc -l "$F" | tee out/wc.txt
-          pip install -q pandas numpy scikit-learn
+          pip install -q pandas numpy scikit-learn scipy
           python3 rba/rba_eval.py data/rba-dataset.csv out 2>&1 | tee out/eval.log
       - name: Publish
         if: always()
         run: |
-          RUN="rba-eval-${{ github.run_number }}"
+          RUN="rba2-eval-${{ github.run_number }}"
           URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
           for attempt in 1 2 3 4 5 6; do
             rm -rf res
