@@ -25,7 +25,7 @@ jobs:
             "https://zenodo.org/records/6782156" ; do
             echo "== $u"; curl -sSIL --max-time 40 "$u" 2>&1 | grep -iE "^HTTP|content-length|content-type|location|curl:" | tr '\n' ' '; echo
           done | tee out/probe.txt
-          curl -sSL --max-time 40 https://csr.lanl.gov/data/cyber1/ | sed 's/<[^>]*>/ /g' | tr -s ' \n' | head -80 | tee out/lanl_page.txt
+          curl -sSL --max-time 40 https://csr.lanl.gov/data/cyber1/ > out/lanl.html; grep -oE 'href="[^"]+"' out/lanl.html | sort -u | tee out/lanl_links.txt; sed 's/<[^>]*>/ /g' out/lanl.html | tr -s ' \n' | grep -v "^ *$" | head -120 | tee out/lanl_page.txt
       - name: Publish
         if: always()
         run: |
