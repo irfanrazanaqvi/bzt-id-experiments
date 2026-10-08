@@ -74,13 +74,23 @@ validation, not as a model of a distributed national deployment.
 | **Exp. 6**: trust engine with the real biometric factor (other five factors synthetic), biometric-only gate, post-hoc hybrid, supervised ML baselines, weight sensitivity | `code/exp6_real_biometric.py` | `data/exp6_*.csv`, `figures/fig9_real_biometric.png` |
 | **Fabric 3.0.0, Raft vs SmartBFT** (4 orderers), 2 runs x default/tuned batching | `.github/workflows/fabric-bft.yml` | `data/fabric3/` |
 | **Baselines**: centralized SQLite service and ES256 token service, 3 runs each | `.github/workflows/baselines.yml`, `baselines/` | `data/baselines/`, `figures/fig10_baselines_bft.png` |
+| **Crash-fault injection** on Fabric 3.0.0 SmartBFT (4 orderers) vs a one-orderer Raft control, 2 runs each | `.github/workflows/fabric-faults.yml`, `faults/inject.sh` | `data/faults/` |
+| **ProVerif 2.05** symbolic verification of the credential protocol, with two negative controls | `.github/workflows/proverif.yml`, `proverif/` | `data/proverif/` |
+| **BBS+ and Groth16** selective-disclosure benchmarks (4-vCPU runner, Node.js) | `.github/workflows/selective-disclosure.yml`, `zk/` | `data/zk/` |
+| **RBA public login data**: non-biometric factors, single rules and supervised baselines (attacker-IP and account-takeover labels) | `.github/workflows/rba-probe.yml`, `rba/rba_eval.py` | `data/rba/` |
 
 Key results: with real LFW biometric scores the engine reaches ROC-AUC 0.982 (95% CI 0.980-0.984), 84.7% recall at 6.7%
 of legitimate sessions flagged; it misses most hardest-10% look-alike impostors (a proxy for spoofing, because LFW has no
 spoof samples), which a 1%-FAR biometric gate catches, so a hybrid policy flags 97.6%. SmartBFT write ceiling about 145 tx/s
 vs about 205-235 tx/s for Raft on the same Fabric version; minimal centralized/token baselines sustained 1,000 write tx/s.
 Only the biometric factor is real; no public dataset contains CNIC/passport transactions. Fabric/baseline numbers come from
-shared 4-vCPU runners, vary between runs, and the BFT runs inject no Byzantine faults.
+shared 4-vCPU runners and vary between runs.
+
+Further results: with one of four SmartBFT orderers crashed the network keeps committing (a leader crash costs about 50 s
+of unavailability), with two down it halts without committing; ProVerif proves injective agreement and secrecy with
+negative controls (symbolic model only; only crash faults, not Byzantine behaviour, were injected); BBS+ presentation and
+Groth16 age-proof costs are about 80-110 ms on a server CPU; on the public RBA login data (synthesized from real logins)
+the fixed trust-engine weights do not transfer (attacker-IP AUC at chance), which is reported as a negative result.
 
 ## Notes
 
