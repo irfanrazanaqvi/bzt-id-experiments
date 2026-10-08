@@ -1,0 +1,16 @@
+rows logon/device/file 470591 203339 445581
+answer events 7323 positive user-days 966
+user-days 300280 positives 964 users 995 positive users 70
+                                                                    scheme      n  positives    AUC  AUC_lo  AUC_hi  recall@FPR=1%  recall@FPR=5%  recall@ALLOW<0.75  FPR@ALLOW<0.75
+0                     Engine, fixed weights (all four factors), test users  60368         79  0.872   0.831   0.912          0.114          0.506              0.797           0.140
+1                                       Ablation: engine without time_anom  60368         79  0.858     NaN     NaN          0.114          0.354              0.797           0.140
+2                                          Ablation: engine without pc_new  60368         79  0.875     NaN     NaN          0.114          0.519              0.810           0.149
+3                                             Ablation: engine without usb  60368         79  0.755     NaN     NaN          0.051          0.266              0.101           0.023
+4                                        Ablation: engine without file_vol  60368         79  0.868     NaN     NaN          0.772          0.772              0.772           0.138
+5                                                 Single factor: time_anom  60368         79  0.590     NaN     NaN          0.013          1.000              0.228           0.045
+6                                                    Single factor: pc_new  60368         79  0.487     NaN     NaN          0.000          1.000              0.000           0.022
+7                                                       Single factor: usb  60368         79  0.859     NaN     NaN          0.772          0.772              0.861           0.169
+8                                                  Single factor: file_vol  60368         79  0.676     NaN     NaN          0.101          0.354              0.291           0.041
+9                             Logistic regression (supervised, user-split)  60368         79  0.883   0.844   0.923          0.165          0.582              0.861           0.169
+10                              Gradient boosting (supervised, user-split)  60368         79  0.896   0.859   0.933          0.354          0.646              1.000           1.000
+11  Engine, learned weights + recalibrated threshold w=0.16/0.00/0.62/0.22  60368         79  0.881     NaN     NaN          0.165          0.532              0.532           0.046
