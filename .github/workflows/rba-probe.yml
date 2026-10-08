@@ -1,4 +1,4 @@
-name: rba-probe
+name: rba-eval
 on:
   push:
     branches: [rba]
@@ -24,21 +24,12 @@ jobs:
           cp data/README.md out/rba_README.md; cp data/RESULTS.md out/rba_RESULTS.md; F=data/rba-dataset.csv; echo "$F" | tee out/csvname.txt
           head -5 "$F" | tee out/head.txt
           wc -l "$F" | tee out/wc.txt
-          pip install -q pandas
-          python3 - <<'PY' 2>&1 | tee out/profile.txt
-          import pandas as pd, glob
-          f='data/rba-dataset.csv'
-          d=pd.read_csv(f,nrows=2_000_000)
-          print(d.dtypes); print(d.describe(include='all').T.to_string()[:4000])
-          for c in d.columns:
-              if d[c].nunique()<30: print(c, d[c].value_counts(dropna=False).to_dict())
-          print('attack ip rate', d.iloc[:,[i for i,c in enumerate(d.columns) if 'Attack' in c][0]].mean())
-          print('ATO count', int(d.iloc[:,[i for i,c in enumerate(d.columns) if 'Takeover' in c][0]].sum()))
-          PY
+          pip install -q pandas numpy scikit-learn
+          python3 rba/rba_eval.py data/rba-dataset.csv out 2>&1 | tee out/eval.log
       - name: Publish
         if: always()
         run: |
-          RUN="rba-probe-${{ github.run_number }}"
+          RUN="rba-eval-${{ github.run_number }}"
           URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
           for attempt in 1 2 3 4 5 6; do
             rm -rf res
