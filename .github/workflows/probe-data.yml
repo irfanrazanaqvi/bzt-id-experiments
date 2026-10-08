@@ -1,0 +1,41 @@
+name: probe-datasets
+on:
+  push:
+    branches: [probe-data]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Probe candidate public data sets (HEAD requests only)
+        run: |
+          mkdir -p out
+          probe() { echo "== $1"; curl -sIL --max-time 40 "$1" | grep -iE '^(HTTP|content-length|content-type|location)' | tr -d '\r' | head -8; }
+          {
+          probe "https://csr.lanl.gov/data/cyber1/"
+          probe "https://csr.lanl.gov/data/cyber1/auth.txt.gz"
+          probe "https://csr.lanl.gov/data/cyber1/redteam.txt.gz"
+          probe "https://kilthub.cmu.edu/articles/dataset/Insider_Threat_Test_Dataset/12841247"
+          probe "http://bias.csr.unibo.it/fvc2004/databases.asp"
+          probe "https://www.kaggle.com/datasets/ruizgara/socofing"
+          probe "https://zenodo.org/api/records?q=fingerprint&size=5"
+          } 2>&1 | tee out/probe.txt
+          curl -sL --max-time 40 "https://csr.lanl.gov/data/cyber1/" | head -c 3000 > out/lanl_index.html || true
+          curl -sL --max-time 40 "https://zenodo.org/api/records?q=fingerprint%20recognition&size=8&sort=mostviewed" | python3 -c "import sys,json;d=json.load(sys.stdin);[print(h['id'],h['metadata'].get('license',{}).get('id'),h['metadata']['title'][:90]) for h in d['hits']['hits']]" 2>&1 | tee out/zenodo_fp.txt
+      - name: Publish
+        if: always()
+        run: |
+          RUN="probe-data-${{ github.run_number }}"
+          URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          for attempt in 1 2 3 4 5 6; do
+            rm -rf res
+            if git ls-remote --exit-code --heads "$URL" fabric-results >/dev/null 2>&1; then git clone -q --depth 1 --branch fabric-results "$URL" res; else mkdir res && (cd res && git init -q -b fabric-results && git remote add origin "$URL"); fi
+            mkdir -p "res/$RUN"; cp -r out/* "res/$RUN/" || true
+            cd res; git config user.name github-actions; git config user.email github-actions@users.noreply.github.com
+            git add -A; git commit -q -m "Data probe $RUN" || true
+            if git push origin fabric-results; then break; fi
+            cd ..; sleep $((attempt * 5))
+          done
