@@ -99,13 +99,12 @@ for lab in ["y_ip", "y_ato"]:
         rows.append({"label": lab, "scheme": nm, "n": len(yt), "positives": int(yt.sum()), "AUC": roc_auc_score(yt, p), "AUC_lo": np.nan, "AUC_hi": np.nan,
                      "recall@FPR=1%": float((p[yt == 1] >= np.quantile(p[yt == 0], .99)).mean()), "recall@FPR=5%": float((p[yt == 1] >= np.quantile(p[yt == 0], .95)).mean()), "recall@ALLOW<0.75": np.nan, "FPR@ALLOW<0.75": np.nan})
 # ---- learned weights in the engine's own form (trust = 1 - weighted anomaly), fitted on training users only, threshold recalibrated on training users at 5% FPR
-from scipy.optimize import nnls
 K = ["geo_new", "device_new", "asn_rare", "failed"]
 for lab in ["y_ip", "y_ato"]:
     y = h[lab].values
     if y[~test].sum() < 5 or y[test].sum() == 0: continue
-    lr = LogisticRegression(max_iter=1000, class_weight="balanced", C=1.0, positive=True).fit(X[~test], y[~test])
-    w = lr.coef_[0]; w = w / w.sum() if w.sum() > 0 else np.ones(4) / 4
+    lr = LogisticRegression(max_iter=1000, class_weight="balanced", C=1.0).fit(X[~test], y[~test])
+    w = np.clip(lr.coef_[0], 0, None); w = w / w.sum() if w.sum() > 0 else np.ones(4) / 4   # negative coefficients clipped to 0 (all factors are anomaly-oriented)
     anom_tr = X[~test] @ w; anom_te = X[test] @ w
     th = np.quantile(anom_tr[y[~test] == 0], .95)     # flag if anomaly above the 95th percentile of legitimate training logins
     yt = y[test]
