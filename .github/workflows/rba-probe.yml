@@ -1,0 +1,42 @@
+name: rba-eval
+on:
+  push:
+    branches: [rba]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Download and inspect the RBA login dataset (Zenodo 10.5281/zenodo.6782156, CC BY 4.0)
+        run: |
+          mkdir -p out data
+          curl -sSL -o data/rba.zip "https://zenodo.org/records/6782156/files/rba-dataset.zip?download=1" 2>&1 | tail -2
+          ls -la data | tee out/files.txt
+          md5sum data/rba.zip | tee out/md5.txt
+          unzip -o -q data/rba.zip -d data/ && ls -la data | tee -a out/files.txt; rm -f data/rba.zip
+          cp data/README.md out/rba_README.md; cp data/RESULTS.md out/rba_RESULTS.md; F=data/rba-dataset.csv; echo "$F" | tee out/csvname.txt
+          head -5 "$F" | tee out/head.txt
+          wc -l "$F" | tee out/wc.txt
+          pip install -q pandas numpy scikit-learn
+          python3 rba/rba_eval.py data/rba-dataset.csv out 2>&1 | tee out/eval.log
+      - name: Publish
+        if: always()
+        run: |
+          RUN="rba-eval-${{ github.run_number }}"
+          URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          for attempt in 1 2 3 4 5 6; do
+            rm -rf res
+            if git ls-remote --exit-code --heads "$URL" fabric-results >/dev/null 2>&1; then git clone -q --depth 1 --branch fabric-results "$URL" res; else mkdir res && (cd res && git init -q -b fabric-results && git remote add origin "$URL"); fi
+            mkdir -p "res/$RUN"; cp -r out/* "res/$RUN/" || true
+            cd res; git config user.name github-actions; git config user.email github-actions@users.noreply.github.com
+            git add -A; git commit -q -m "RBA probe $RUN (${{ job.status }})" || true
+            if git push origin fabric-results; then break; fi
+            cd ..; sleep $((attempt * 5))
+          done
