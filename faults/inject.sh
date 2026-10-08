@@ -8,7 +8,7 @@ export FABRIC_CFG_PATH="$TN/../config" CORE_PEER_TLS_ENABLED=true CORE_PEER_LOCA
 O1="$TN/organizations/peerOrganizations/org1.example.com"; O2="$TN/organizations/peerOrganizations/org2.example.com"
 export CORE_PEER_TLS_ROOTCERT_FILE="$O1/tlsca/tlsca.org1.example.com-cert.pem" CORE_PEER_MSPCONFIGPATH="$O1/users/Admin@org1.example.com/msp" CORE_PEER_ADDRESS=localhost:7051
 OCA="$TN/organizations/ordererOrganizations/example.com/tlsca/tlsca.example.com-cert.pem"
-if [ "$MODE" = bft ]; then OADDR=localhost:8050; OHOST=orderer2.example.com; else OADDR=localhost:7050; OHOST=orderer.example.com; fi
+if [ "$MODE" = bft ]; then OADDR=localhost:7052; OHOST=orderer2.example.com; else OADDR=localhost:7050; OHOST=orderer.example.com; fi
 echo "scenario,i,rc,latency_ms" > "$OUT"
 inv() { # scenario idx timeout
   local id="f-$(date +%s%N)" t0 t1 rc
