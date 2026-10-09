@@ -1,0 +1,38 @@
+name: probe3
+on:
+  push:
+    branches: [probe3]
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe
+        run: |
+          mkdir -p out
+          P=out/probe.txt
+          h() { echo "== $1 $2" | tee -a $P; curl -sIL -m 40 -A "Mozilla/5.0" "$2" 2>&1 | grep -iE "^HTTP|content-length|content-type|^location" | tee -a $P; }
+          h cmu_keystroke https://www.cs.cmu.edu/~keystroke/DSL-StrongPasswordData.csv
+          h cmu_keystroke_page https://www.cs.cmu.edu/~keystroke/
+          h kaggle_socofing https://www.kaggle.com/api/v1/datasets/download/ruizgara/socofing
+          h lanl_data https://csr.lanl.gov/data/
+          curl -sL -m 40 https://csr.lanl.gov/data/ -o out/lanl_data.html; grep -oiE 'href="[^"]*"' out/lanl_data.html | head -40 | tee -a $P
+          curl -sL -m 40 https://csr.lanl.gov/data/cyber1/ -o out/lanl_cyber1.html; grep -oiE 'href="[^"]*(gz|zip|auth|redteam|fence)[^"]*"' out/lanl_cyber1.html | tee -a $P
+          for q in socofing "sokoto coventry fingerprint" "keystroke dynamics" "fingerprint"; do echo "== zenodo $q" | tee -a $P; curl -sL -m 40 "https://zenodo.org/api/records?q=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[1]))" "$q")&size=6" | python3 -c "
+import sys,json
+try:
+  d=json.load(sys.stdin)
+  for h in d['hits']['hits']: print(h['id'],h['metadata'].get('license',{}).get('id'),h['metadata']['title'][:90], sum(f['size'] for f in h.get('files',[]))//1000000,'MB')
+except Exception as e: print('err',e)" | tee -a $P; done
+          echo "== huggingface" | tee -a $P
+          curl -sL -m 40 "https://huggingface.co/api/datasets?search=socofing&limit=5" | python3 -c "import sys,json;print([x['id'] for x in json.load(sys.stdin)])" | tee -a $P || true
+          curl -sL -m 40 "https://huggingface.co/api/datasets?search=fingerprint&limit=8" | python3 -c "import sys,json;print([x['id'] for x in json.load(sys.stdin)])" | tee -a $P || true
+          curl -sL -m 60 -o out/keystroke.csv https://www.cs.cmu.edu/~keystroke/DSL-StrongPasswordData.csv; head -3 out/keystroke.csv | cut -c1-200 | tee -a $P; wc -l out/keystroke.csv | tee -a $P; rm -f out/keystroke.csv
+      - name: Publish
+        if: always()
+        run: |
+          RUN="probe3-${{ github.run_number }}"; URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          for a in 1 2 3 4; do rm -rf res; git clone -q --depth 1 --branch fabric-results "$URL" res; mkdir -p res/$RUN; cp -r out/* res/$RUN/; cd res; git config user.name gh; git config user.email gh@x.y; git add -A; git commit -q -m "probe $RUN"; git push origin fabric-results && break; cd ..; sleep 5; done
