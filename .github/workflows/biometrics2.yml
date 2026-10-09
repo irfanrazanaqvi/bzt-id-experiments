@@ -1,0 +1,65 @@
+name: biometrics2
+on:
+  push:
+    branches: [fp]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  fingerprint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: SOCOFing download, SourceAFIS matching, trust-engine run
+        run: |
+          mkdir -p out data
+          curl -sSL -m 600 -o data/socofing.zip "https://huggingface.co/datasets/ThanhQuy78/socofing/resolve/main/socofing.zip"
+          ls -la data | tee out/files.txt; md5sum data/socofing.zip | tee out/md5.txt
+          unzip -q -o data/socofing.zip -d data/soco; rm data/socofing.zip
+          find data/soco -maxdepth 3 -type d | head -20 | tee out/tree.txt
+          find data/soco -name "*.BMP" | wc -l | tee out/nbmp.txt
+          python3 fingerprint/make_pairs.py data/soco out/fp_pairs.csv 3000 2>&1 | tee out/pairs.log
+          mkdir -p mvn && cat > mvn/pom.xml <<'EOF'
+          <project xmlns="http://maven.apache.org/POM/4.0.0"><modelVersion>4.0.0</modelVersion><groupId>x</groupId><artifactId>x</artifactId><version>1</version>
+          <dependencies><dependency><groupId>com.machinezoo.sourceafis</groupId><artifactId>sourceafis</artifactId><version>3.18.1</version></dependency></dependencies></project>
+          EOF
+          mvn -q -f mvn/pom.xml dependency:copy-dependencies -DoutputDirectory=mvn/lib 2>&1 | tail -5
+          mkdir -p mvn/cls && javac -cp "mvn/lib/*" -d mvn/cls fingerprint/Match.java
+          time java -cp "mvn/lib/*:mvn/cls" Match out/fp_pairs.csv out/fp_pair_scores.csv 2>&1 | tail -5 | tee out/match.log
+          head -3 out/fp_pair_scores.csv; wc -l out/fp_pair_scores.csv
+          pip install -q numpy pandas scikit-learn matplotlib
+          mkdir -p fpexp/data fpexp/figures && cp -r code fpexp/code
+          python3 fpexp/code/exp6_real_biometric.py out/fp_pair_scores.csv 2>&1 | tee out/exp6_fp.log
+          for f in fpexp/data/exp6_*.csv; do cp "$f" "out/fp_$(basename $f)"; done
+      - name: Publish
+        if: always()
+        run: |
+          RUN="fingerprint-${{ github.run_number }}"; URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          for a in 1 2 3 4 5; do rm -rf res; git clone -q --depth 1 --branch fabric-results "$URL" res; mkdir -p res/$RUN; cp -r out/* res/$RUN/; cd res; git config user.name gh; git config user.email gh@x.y; git add -A; git commit -q -m "fingerprint $RUN"; git push origin fabric-results && break; cd ..; sleep 7; done
+  keystroke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: CMU keystroke dynamics, scaled-Manhattan scores, trust-engine run
+        run: |
+          mkdir -p out data
+          curl -sSL -o data/ks.csv https://www.cs.cmu.edu/~keystroke/DSL-StrongPasswordData.csv
+          md5sum data/ks.csv | tee out/md5.txt; wc -l data/ks.csv
+          pip install -q numpy pandas scikit-learn matplotlib
+          python3 keystroke/keystroke_scores.py data/ks.csv out/ks_pair_scores.csv 2>&1 | tee out/ks.log
+          mkdir -p ksexp/data ksexp/figures && cp -r code ksexp/code
+          python3 ksexp/code/exp6_real_biometric.py out/ks_pair_scores.csv 2>&1 | tee out/exp6_ks.log
+          for f in ksexp/data/exp6_*.csv; do cp "$f" "out/ks_$(basename $f)"; done
+      - name: Publish
+        if: always()
+        run: |
+          RUN="keystroke-${{ github.run_number }}"; URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          for a in 1 2 3 4 5; do rm -rf res; git clone -q --depth 1 --branch fabric-results "$URL" res; mkdir -p res/$RUN; cp -r out/* res/$RUN/; cd res; git config user.name gh; git config user.email gh@x.y; git add -A; git commit -q -m "keystroke $RUN"; git push origin fabric-results && break; cd ..; sleep 7; done
