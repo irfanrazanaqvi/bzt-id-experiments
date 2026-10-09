@@ -1,0 +1,22 @@
+name: probe4
+on:
+  push:
+    branches: [probe4]
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe
+        run: |
+          mkdir -p out
+          python3 probe4/z.py 2>&1 | tee out/probe.txt
+          java -version 2>&1 | tee -a out/probe.txt; mvn -v 2>&1 | head -3 | tee -a out/probe.txt
+      - name: Publish
+        if: always()
+        run: |
+          RUN="probe4-${{ github.run_number }}"; URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          for a in 1 2 3 4; do rm -rf res; git clone -q --depth 1 --branch fabric-results "$URL" res; mkdir -p res/$RUN; cp -r out/* res/$RUN/; cd res; git config user.name gh; git config user.email gh@x.y; git add -A; git commit -q -m "probe $RUN"; git push origin fabric-results && break; cd ..; sleep 5; done
