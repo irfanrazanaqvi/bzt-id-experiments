@@ -29,7 +29,13 @@ jobs:
           EOF
           mvn -B -f mvn/pom.xml dependency:copy-dependencies -DoutputDirectory=$PWD/mvn/lib 2>&1 | tee out/mvn.log | tail -5; ls mvn/lib | tee out/libs.txt
           mkdir -p mvn/cls && javac -cp "mvn/lib/*" -d mvn/cls fingerprint/Match.java 2>&1 | tee out/javac.log
-          java -cp "mvn/lib/*:mvn/cls" Match out/fp_pairs.csv out/fp_pair_scores.csv 2>&1 | tee out/match.log | tail -5
+          python3 fingerprint/make_pairs.py data/soco out/fp_pairs_small.csv 600 > /dev/null
+          for dpi in 125 170 250 333 500; do
+            java -cp "mvn/lib/*:mvn/cls" Match out/fp_pairs_small.csv out/fp_small_$dpi.csv $dpi 2>/dev/null
+            python3 fingerprint/auc.py out/fp_small_$dpi.csv $dpi | tee -a out/dpi_sweep.txt
+          done
+          BEST=$(sort -k3 -n -r out/dpi_sweep.txt | head -1 | awk '{print $1}'); echo "best calibration dpi $BEST" | tee out/best_dpi.txt
+          java -cp "mvn/lib/*:mvn/cls" Match out/fp_pairs.csv out/fp_pair_scores.csv $BEST 2>&1 | tee out/match.log | tail -3
           head -3 out/fp_pair_scores.csv; wc -l out/fp_pair_scores.csv
           pip install -q numpy pandas scikit-learn matplotlib
           mkdir -p fpexp/data fpexp/figures && cp -r code fpexp/code

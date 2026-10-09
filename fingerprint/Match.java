@@ -3,11 +3,13 @@ import java.io.PrintWriter;
 import java.nio.file.*;
 import java.util.*;
 public class Match {
+    static int DPI = 500;
     static FingerprintTemplate load(String p) {
-        try { return new FingerprintTemplate(new FingerprintImage(Files.readAllBytes(Path.of(p)), new FingerprintImageOptions().dpi(500))); }
+        try { return new FingerprintTemplate(new FingerprintImage(Files.readAllBytes(Path.of(p)), new FingerprintImageOptions().dpi(DPI))); }
         catch (Exception e) { throw new RuntimeException(p, e); }
     }
     public static void main(String[] a) throws Exception {
+        if (a.length > 2) DPI = Integer.parseInt(a[2]);
         List<String> lines = Files.readAllLines(Path.of(a[0]));
         Map<String, FingerprintTemplate> cache = new HashMap<>();
         try (PrintWriter out = new PrintWriter(a[1])) {
