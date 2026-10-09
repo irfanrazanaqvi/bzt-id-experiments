@@ -27,9 +27,9 @@ jobs:
           <project xmlns="http://maven.apache.org/POM/4.0.0"><modelVersion>4.0.0</modelVersion><groupId>x</groupId><artifactId>x</artifactId><version>1</version>
           <dependencies><dependency><groupId>com.machinezoo.sourceafis</groupId><artifactId>sourceafis</artifactId><version>3.18.1</version></dependency></dependencies></project>
           EOF
-          mvn -q -f mvn/pom.xml dependency:copy-dependencies -DoutputDirectory=mvn/lib 2>&1 | tail -5
-          mkdir -p mvn/cls && javac -cp "mvn/lib/*" -d mvn/cls fingerprint/Match.java
-          time java -cp "mvn/lib/*:mvn/cls" Match out/fp_pairs.csv out/fp_pair_scores.csv 2>&1 | tail -5 | tee out/match.log
+          mvn -B -f mvn/pom.xml dependency:copy-dependencies -DoutputDirectory=mvn/lib 2>&1 | tee out/mvn.log | tail -5; ls mvn/lib | tee out/libs.txt
+          mkdir -p mvn/cls && javac -cp "mvn/lib/*" -d mvn/cls fingerprint/Match.java 2>&1 | tee out/javac.log
+          java -cp "mvn/lib/*:mvn/cls" Match out/fp_pairs.csv out/fp_pair_scores.csv 2>&1 | tee out/match.log | tail -5
           head -3 out/fp_pair_scores.csv; wc -l out/fp_pair_scores.csv
           pip install -q numpy pandas scikit-learn matplotlib
           mkdir -p fpexp/data fpexp/figures && cp -r code fpexp/code
@@ -41,6 +41,7 @@ jobs:
           RUN="fingerprint-${{ github.run_number }}"; URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
           for a in 1 2 3 4 5; do rm -rf res; git clone -q --depth 1 --branch fabric-results "$URL" res; mkdir -p res/$RUN; cp -r out/* res/$RUN/; cd res; git config user.name gh; git config user.email gh@x.y; git add -A; git commit -q -m "fingerprint $RUN"; git push origin fabric-results && break; cd ..; sleep 7; done
   keystroke:
+    if: false
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
