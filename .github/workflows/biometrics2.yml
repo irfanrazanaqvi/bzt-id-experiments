@@ -27,7 +27,7 @@ jobs:
           <project xmlns="http://maven.apache.org/POM/4.0.0"><modelVersion>4.0.0</modelVersion><groupId>x</groupId><artifactId>x</artifactId><version>1</version>
           <dependencies><dependency><groupId>com.machinezoo.sourceafis</groupId><artifactId>sourceafis</artifactId><version>3.18.1</version></dependency></dependencies></project>
           EOF
-          mvn -B -f mvn/pom.xml dependency:copy-dependencies -DoutputDirectory=mvn/lib 2>&1 | tee out/mvn.log | tail -5; ls mvn/lib | tee out/libs.txt
+          mvn -B -f mvn/pom.xml dependency:copy-dependencies -DoutputDirectory=$PWD/mvn/lib 2>&1 | tee out/mvn.log | tail -5; ls mvn/lib | tee out/libs.txt
           mkdir -p mvn/cls && javac -cp "mvn/lib/*" -d mvn/cls fingerprint/Match.java 2>&1 | tee out/javac.log
           java -cp "mvn/lib/*:mvn/cls" Match out/fp_pairs.csv out/fp_pair_scores.csv 2>&1 | tee out/match.log | tail -5
           head -3 out/fp_pair_scores.csv; wc -l out/fp_pair_scores.csv
