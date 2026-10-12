@@ -4,12 +4,13 @@ Template = median and median-absolute-deviation of each key hold and each digrap
 test windows = consecutive blocks of W keystrokes from the SECOND HALF. Score = -mean(|z|) over the template features present in the window
 (scaled Manhattan distance, |z| clipped at 10). Genuine = the user's own windows; impostor = windows of other users of the SAME split scored against this template.
 Users are split at random into disjoint calibration/test halves. Output: pair-score CSV in the format of the LFW pair scores.
-usage: keystroke_eval.py <zip> <device: Desktop|Tablet|Phone> <out.csv>"""
+usage: keystroke_eval.py <zip> <device: Desktop|Tablet|Phone> <out.csv> [window_keystrokes=60]"""
 import sys, zipfile, re, io, random, collections
 import numpy as np, pandas as pd
 from sklearn.metrics import roc_auc_score, roc_curve
 Z, DEV, OUT = sys.argv[1], sys.argv[2], sys.argv[3]
-W, MINF, MAXZ = 60, 10, 10.0
+W = int(sys.argv[4]) if len(sys.argv) > 4 else 60
+MINF, MAXZ = 10, 10.0
 rng = random.Random(11)
 z = zipfile.ZipFile(Z)
 pat = {"Desktop": r"BB-MAS_Dataset/(\d+)/\1_Desktop_Keyboard\.csv$", "Tablet": r"BB-MAS_Dataset/(\d+)/\1_HandTablet_Keyboard_\(Nexus\d+\)\.csv$", "Phone": r"BB-MAS_Dataset/(\d+)/\1_HandPhone_Keyboard_\(.*\)\.csv$"}[DEV]
