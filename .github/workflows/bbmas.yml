@@ -21,9 +21,14 @@ jobs:
           curl -sSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/octet-stream" -o data/bb.zip "https://api.github.com/repos/${{ github.repository }}/releases/assets/632637064"
           ls -la data | tee out/files.txt; sha256sum data/bb.zip | tee out/sha256.txt
           unzip -l data/bb.zip > out/zip_list_full.txt; head -60 out/zip_list_full.txt; tail -3 out/zip_list_full.txt
-          python3 bbmas/survey.py data/bb.zip out 2>&1 | tee out/survey.log
+          pip install -q numpy pandas scikit-learn matplotlib
+          for dev in Desktop Tablet Phone; do python3 bbmas/keystroke_eval.py data/bb.zip $dev out/bbmas_${dev}_pair_scores.csv 2>&1 | tee out/bbmas_${dev}.log; done
+          mkdir -p bbexp/data bbexp/figures && cp -r code bbexp/code
+          python3 bbexp/code/exp6_real_biometric.py out/bbmas_Desktop_pair_scores.csv 2>&1 | tee out/exp6_bbmas_desktop.log
+          for f in bbexp/data/exp6_*.csv; do cp "$f" "out/bbmas_desktop_$(basename $f)"; done
+          rm -f data/bb.zip
       - name: Publish structure only
         if: always()
         run: |
-          RUN="bbmas-probe-${{ github.run_number }}"; URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
-          for a in 1 2 3 4; do rm -rf res; git clone -q --depth 1 --branch fabric-results "$URL" res; mkdir -p res/$RUN; cp out/*.txt out/*.log res/$RUN/ 2>/dev/null; cd res; git config user.name gh; git config user.email gh@x.y; git add -A; git commit -q -m "probe $RUN"; git push origin fabric-results && break; cd ..; sleep 5; done
+          RUN="bbmas-${{ github.run_number }}"; URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          for a in 1 2 3 4; do rm -rf res; git clone -q --depth 1 --branch fabric-results "$URL" res; mkdir -p res/$RUN; cp out/*.txt out/*.log out/*.csv out/*.json res/$RUN/ 2>/dev/null; cd res; git config user.name gh; git config user.email gh@x.y; git add -A; git commit -q -m "probe $RUN"; git push origin fabric-results && break; cd ..; sleep 5; done
