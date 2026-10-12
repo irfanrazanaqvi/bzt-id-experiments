@@ -1,0 +1,29 @@
+name: bbmas
+on:
+  push:
+    branches: [bbmas]
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Download draft-release asset and list structure (no data is published)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p out data
+          curl -sSL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/octet-stream" -o data/bb.zip "https://api.github.com/repos/${{ github.repository }}/releases/assets/632637064"
+          ls -la data | tee out/files.txt; sha256sum data/bb.zip | tee out/sha256.txt
+          unzip -l data/bb.zip > out/zip_list_full.txt; head -60 out/zip_list_full.txt; tail -3 out/zip_list_full.txt
+          python3 bbmas/survey.py data/bb.zip out 2>&1 | tee out/survey.log
+      - name: Publish structure only
+        if: always()
+        run: |
+          RUN="bbmas-probe-${{ github.run_number }}"; URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          for a in 1 2 3 4; do rm -rf res; git clone -q --depth 1 --branch fabric-results "$URL" res; mkdir -p res/$RUN; cp out/*.txt out/*.log res/$RUN/ 2>/dev/null; cd res; git config user.name gh; git config user.email gh@x.y; git add -A; git commit -q -m "probe $RUN"; git push origin fabric-results && break; cd ..; sleep 5; done
