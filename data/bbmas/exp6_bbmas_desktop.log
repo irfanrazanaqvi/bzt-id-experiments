@@ -1,0 +1,12 @@
+biometric-only on LFW test: AUC=0.5654 [{'operating_point': 'FAR~10%', 'threshold_s': 0.9, 'FAR': 0.0998268897864974, 'FRR': 0.8061946902654867}, {'operating_point': 'FAR~1%', 'threshold_s': 0.99, 'FAR': 0.010963646855164455, 'FRR': 0.9575221238938053}, {'operating_point': 'FAR~0.1%', 'threshold_s': 0.999, 'FAR': 0.0, 'FRR': 0.9991150442477876}]
+                                                           scheme     AUC  AUC_CI_lo  AUC_CI_hi  recall     FPR  recall@FPR=1%  recall@FPR=5%
+0                     BZT-ID trust engine (6 factors; ALLOW<0.75)  0.8607     0.8549     0.8674  0.8454  0.4322         0.3271         0.6302
+1                           Biometric-only, FAR 1% gate (s>=0.99)  0.4431     0.4335     0.4552  0.9536  0.9522         0.0119         0.0428
+2                        Biometric-only, FAR 0.1% gate (s>=0.999)  0.4431     0.4335     0.4552  0.9996  0.9998         0.0119         0.0428
+3  Hybrid: engine ALLOW and biometric s>=0.99 (post-hoc ablation)     NaN        NaN        NaN  0.9796  0.9552            NaN            NaN
+per-class engine {'spoof': 0.3865, 'credential_stuffing': 1.0, 'impossible_travel': 1.0, 'insider_replay': 0.995} bio {'spoof': 0.8855, 'credential_stuffing': 0.9895, 'impossible_travel': 0.952, 'insider_replay': 0.9875}
+                                       scheme     AUC  AUC_CI_lo  AUC_CI_hi  recall@FPR=1%  recall@FPR=5%
+0            Logistic regression (supervised)  0.9911     0.9895     0.9924         0.7212         0.9736
+1              Gradient boosting (supervised)  0.9998     0.9997     0.9999         0.9985         1.0000
+2  BZT-ID engine (fixed weights, no training)  0.8607     0.8549     0.8674         0.3271         0.6302
+weight AUC min/med/max 0.7032955000000001 0.8588806875 0.95853928125 nominal 0.8607395 equal 0.9382755

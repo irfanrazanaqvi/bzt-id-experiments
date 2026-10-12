@@ -81,6 +81,7 @@ validation, not as a model of a distributed national deployment.
 | **Emulated WAN**: Fabric 3.0.0 Raft vs SmartBFT with 0/15/40 ms one-way delay (tc netem), 2 runs each | `.github/workflows/fabric-wan.yml` | `data/wan/` |
 | **Learned weights and ablation** on the RBA login data (user-split, recalibrated threshold) | `rba/rba_eval.py` (rba2 branch workflow) | `data/rba2/` |
 | **CERT Insider Threat r4.2** (simulated, labelled): behavioural/device/time factors, ablation, supervised baselines | `cert/cert_eval.py`, `.github/workflows/cert-probe.yml` | `data/cert/` |
+| **Typing dynamics as the biometric factor**: CMU keystroke (fixed text) and SU-AIS BB-MAS (free text, IEEE DataPort 10.21227/rpaz-0h66) | `keystroke/keystroke_scores.py`, `bbmas/keystroke_eval.py`, `.github/workflows/biometrics2.yml`, `bbmas.yml` | `data/keystroke/`, `data/bbmas/` (derived pair scores only; raw BB-MAS is not redistributed, its page states no licence) |
 
 Key results: with real LFW biometric scores the engine reaches ROC-AUC 0.982 (95% CI 0.980-0.984), 84.7% recall at 6.7%
 of legitimate sessions flagged; it misses most hardest-10% look-alike impostors (a proxy for spoofing, because LFW has no
@@ -111,3 +112,6 @@ If you use this code, please cite the paper (citation details will be added once
 ## License
 
 MIT, see `LICENSE`.
+
+Typing dynamics: CMU fixed-text keystrokes give engine AUC 0.978 (factor equal error rate 10.7%); BB-MAS free-text typing is weak (equal error rates 35-46%) and the engine inherits that.
+A fingerprint-matching attempt on SOCOFing (SourceAFIS) scored at chance (AUC 0.497), so it is not used in the paper; the logs are kept in `data/fingerprint_attempt/` for transparency.
