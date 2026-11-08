@@ -117,6 +117,26 @@ for lab in ["y_ip", "y_ato"]:
         rows.append({"label": lab, "scheme": nm, "n": len(yt), "positives": int(yt.sum()), "AUC": roc_auc_score(yt, -sc), "AUC_lo": np.nan, "AUC_hi": np.nan,
                      "recall@FPR=1%": rec_at_fpr(sc, yt, .01), "recall@FPR=5%": rec_at_fpr(sc, yt, .05), "recall@ALLOW<0.75": float((sc[yt == 1] < .75).mean()), "FPR@ALLOW<0.75": float((sc[yt == 0] < .75).mean())})
 res = pd.DataFrame(rows); res.to_csv(os.path.join(OUT, "rba_summary.csv"), index=False); print(res.round(4).to_string())
+
+# ---- robustness of the supervised baselines: repeat the 80/20 user split with 20 different seeds (added after the single-split gradient-boosting
+# result on account takeover was far below chance with only 19 test positives); class-weighted and regularised gradient boosting
+print("multi-split robustness", flush=True)
+msrows = []
+for lab in ["y_ip", "y_ato"]:
+    y = h[lab].values
+    res_ = {"fixed engine": [], "logistic regression": [], "gradient boosting": [], "pos": []}
+    for seed in range(20):
+        tst = (pd.Series(uid).apply(lambda u: zlib.crc32((str(u) + "|" + str(seed)).encode()) % 5 == 0)).values
+        if y[~tst].sum() < 5 or y[tst].sum() < 3: continue
+        yt = y[tst]; res_["pos"].append(int(yt.sum()))
+        res_["fixed engine"].append(roc_auc_score(yt, -trust(h, K)[tst]))
+        lrm = LogisticRegression(max_iter=500, class_weight="balanced").fit(X[~tst], y[~tst]); res_["logistic regression"].append(roc_auc_score(yt, lrm.predict_proba(X[tst])[:, 1]))
+        gb = HistGradientBoostingClassifier(random_state=0, class_weight="balanced", max_depth=3, min_samples_leaf=200, max_iter=100).fit(X[~tst], y[~tst])
+        res_["gradient boosting"].append(roc_auc_score(yt, gb.predict_proba(X[tst])[:, 1]))
+    for nm in ["fixed engine", "logistic regression", "gradient boosting"]:
+        v = np.array(res_[nm]); msrows.append({"label": lab, "scheme": nm, "splits": len(v), "test_positives_mean": float(np.mean(res_["pos"])) if v.size else np.nan,
+            "AUC_mean": float(v.mean()) if v.size else np.nan, "AUC_sd": float(v.std()) if v.size else np.nan, "AUC_min": float(v.min()) if v.size else np.nan, "AUC_max": float(v.max()) if v.size else np.nan})
+ms = pd.DataFrame(msrows); ms.to_csv(os.path.join(OUT, "rba_multisplit.csv"), index=False); print(ms.round(4).to_string())
 info = {"rows_total": tot, "attack_ip_rows_total": n_attack, "ato_rows_total": n_ato, "sample_rows": int(len(d)), "sample_users": int(d["User ID"].nunique()), "history_rows": int(len(h)),
         "history_attack_ip": int(h.y_ip.sum()), "history_ato": int(h.y_ato.sum()), "feature_means_attack_vs_legit": {k: [float(h.loc[h.y_ip == 1, k].mean()), float(h.loc[h.y_ip == 0, k].mean())] for k in ["geo_new", "device_new", "asn_rare", "failed"]}}
 json.dump(info, open(os.path.join(OUT, "rba_info.json"), "w"), indent=1); print(json.dumps(info, indent=1))
