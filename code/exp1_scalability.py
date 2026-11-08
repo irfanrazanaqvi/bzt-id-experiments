@@ -121,7 +121,7 @@ def plot_exp1(df):
     ax1.plot(df.num_peers, df.verify_latency_ms_p95, "s--", color="#c0392b", alpha=0.5, label="Verification (p95)")
     ax1.set_xlabel("Number of consortium peer nodes (N)")
     ax1.set_ylabel("Commit latency (ms)")
-    ax1.set_title("Fig. 3. Consensus latency vs. consortium size (BFT quorum $\\lceil 2N/3 \\rceil$)")
+    ax1.set_title("Simulated endorsement-quorum commit latency vs. consortium size\n(model output; no ordering-protocol traffic)", fontsize=10)
     ax1.grid(alpha=0.3)
     ax1.legend(fontsize=8)
     fig.tight_layout()
