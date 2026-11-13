@@ -33,7 +33,7 @@ for k, lab, c in spec:
     v = sc[sc.label == k].zte_score
     ax.hist(v, bins=bins, density=True, histtype="stepfilled", alpha=0.25, color=c); ax.hist(v, bins=bins, density=True, histtype="step", color=c, lw=1.4, label=lab)
 ax.axvline(0.75, color=C["ink"], ls="--", lw=1); ax.axvline(0.5, color=C["grey"], ls=":", lw=1.2)
-ax.set_ylim(0, ax.get_ylim()[1] * 1.12); ymax = ax.get_ylim()[1]; ax.text(0.755, ymax * 0.985, "ALLOW ≥ 0.75", fontsize=8, va="top"); ax.text(0.495, ymax * 0.985, "STEP-UP ≥ 0.50", fontsize=8, va="top", ha="right", color=C["grey"])
+ax.set_ylim(0, ax.get_ylim()[1] * 1.12); ymax = ax.get_ylim()[1]; ax.text(0.755, ymax * 0.985, "ALLOW ≥ 0.75", fontsize=9, va="top"); ax.text(0.495, ymax * 0.985, "STEP-UP ≥ 0.50", fontsize=9, va="top", ha="right", color=C["grey"])
 ax.set_xlabel("Zero-trust composite score $T(x)$"); ax.set_ylabel("Density"); ax.set_xlim(0, 1.02)
 ax.legend(loc="center left", bbox_to_anchor=(0.0, 0.60)); fig.tight_layout(); save(fig, "fig5_score_distributions.png")
 
@@ -54,7 +54,7 @@ fig, ax = plt.subplots(1, 2, figsize=(6.5, 3.3))
 for key, lab, c, m in [("default", "Default batching (2 s, 10 tx/block)", C["blue"], "o"), ("tuned", "Tuned batching (200 ms, 100 tx/block)", C["verm"], "s")]:
     x = issue(pd.read_csv(os.path.join(D, "fabric", f"fabric_{key}.csv")))
     ax[0].plot(x["rate"], x["Avg Latency (s)"] * 1000, "-" + m, color=c, label=lab); ax[1].plot(x["rate"], x["Throughput (TPS)"], "-" + m, color=c, label=lab)
-ax[1].plot([0, 310], [0, 310], ":", color=C["grey"]); ax[1].text(212, 236, "ideal", color=C["grey"], fontsize=8, rotation=34)
+ax[1].plot([0, 310], [0, 310], ":", color=C["grey"]); ax[1].text(212, 236, "ideal", color=C["grey"], fontsize=9, rotation=34)
 ax[0].set_ylim(bottom=0); ax[1].set_xlim(0, 310); ax[1].set_ylim(0, 310)
 ax[0].set_ylabel("Mean commit latency (ms)"); ax[1].set_ylabel("Committed throughput (tx/s)")
 for a in ax: a.set_xlabel("Offered send rate (tx/s)")
@@ -67,9 +67,9 @@ w = pd.read_csv(os.path.join(D, "exp5_weight_sensitivity.csv")); dd = pd.read_cs
 rnd = w[w.weights != "nominal"]; nom = float(w[w.weights == "nominal"].auc.iloc[0])
 fig, ax = plt.subplots(1, 2, figsize=(6.5, 3.2))
 ax[0].hist(rnd.auc, bins=25, color=C["sky"], edgecolor="white"); ax[0].axvline(nom, color=C["ink"], ls="--", lw=1.2)
-ax[0].text(nom - 0.0003, ax[0].get_ylim()[1] * 0.97, "nominal ", fontsize=8, va="top", ha="right"); ax[0].set_xlabel("ROC-AUC (500 random weight vectors)"); ax[0].set_ylabel("Count")
+ax[0].text(nom - 0.0003, ax[0].get_ylim()[1] * 0.97, "nominal ", fontsize=9, va="top", ha="right"); ax[0].set_xlabel("ROC-AUC (500 random weight vectors)"); ax[0].set_ylabel("Count")
 ax[1].plot(dd.difficulty_d, dd.zte_auc, "-o", color=C["blue"], label="Trust engine"); ax[1].plot(dd.difficulty_d, dd.bio_only_auc, "-s", color=C["verm"], label="Biometric only")
-ax[1].set_xlabel("Attack difficulty $d$ (0 = Exp. 3, 1 = indistinguishable)"); ax[1].set_ylabel("ROC-AUC"); ax[1].legend(loc="lower left")
+ax[1].set_xlabel("Attack difficulty $d$ (0 = Exp. 3)"); ax[1].set_ylabel("ROC-AUC"); ax[1].legend(loc="lower left")
 panel(ax[0], "(a) Sensitivity to feature weights"); panel(ax[1], "(b) Sensitivity to attack difficulty"); fig.tight_layout(); save(fig, "fig8_sensitivity.png")
 
 # Fig 10
@@ -84,8 +84,8 @@ rtp = [base("central", "verify", 600, "tp_mean"), base("jwt", "verify", 600, "tp
 fig, ax = plt.subplots(1, 3, figsize=(6.5, 3.3))
 for a, v, t, yl in zip(ax, [lat, wtp, rtp], ["(a) Write latency\nat 100 tx/s", "(b) Write throughput\nat 300 tx/s", "(c) Read throughput\nat 600 tx/s"], ["Mean latency (ms)", "Committed tx/s", "Committed tx/s"]):
     a.bar(range(6), v, color=cols, edgecolor="#333", linewidth=0.4)
-    for i, x in enumerate(v): a.text(i, x, f"{x:.0f}", ha="center", va="bottom", fontsize=7.5)
+    for i, x in enumerate(v): a.text(i, x, f"{x:.0f}", ha="center", va="bottom", fontsize=8.8)
     a.set_xticks([]); a.set_ylabel(yl); panel(a, t); a.set_ylim(0, max(v) * 1.15); a.grid(axis="x", visible=False)
 from matplotlib.patches import Patch
-fig.legend([Patch(fc=c, ec="#333", lw=0.4) for c in cols], labels, loc="lower center", ncol=3, bbox_to_anchor=(0.5, -0.01), fontsize=8)
+fig.legend([Patch(fc=c, ec="#333", lw=0.4) for c in cols], labels, loc="lower center", ncol=3, bbox_to_anchor=(0.5, -0.01), fontsize=9)
 fig.tight_layout(rect=(0, 0.14, 1, 1)); save(fig, "fig10_baselines_bft.png")
