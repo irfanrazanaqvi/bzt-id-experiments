@@ -134,13 +134,14 @@ pd.DataFrame({"auc": aucs}).to_csv(os.path.join(OUT_DATA, "exp6_weight_sensitivi
 print("weight AUC min/med/max", np.min(aucs), np.median(aucs), np.max(aucs), "nominal", summ.AUC[0], "equal", auc_attack_low(trust(df, [1/6]*6), atk))
 
 # figure
-fig, ax = plt.subplots(1, 2, figsize=(10.5, 4.3), dpi=200)
+from figstyle import setup, panel, C
+setup()
+fig, ax = plt.subplots(1, 2, figsize=(6.5, 3.2))
 b = np.linspace(-0.2, 1, 49)
-ax[0].hist(tg, bins=b, alpha=.6, color="#2a78d6", label="genuine pairs", density=True); ax[0].hist(ti, bins=b, alpha=.6, color="#eb6834", label="impostor pairs", density=True)
-ax[0].set_xlabel("raw cosine similarity (FaceNet embeddings)"); ax[0].set_ylabel("density"); ax[0].set_title("(a) Real LFW biometric scores (test identities)", fontsize=10); ax[0].legend(fontsize=8)
-for nm, s, c in [("Trust engine", eng, "#2a78d6"), ("Biometric only", bio, "#eb6834")]:
+ax[0].hist(ti, bins=b, alpha=.6, color=C["verm"], label="Impostor pairs", density=True); ax[0].hist(tg, bins=b, alpha=.6, color=C["blue"], label="Genuine pairs", density=True)
+ax[0].set_xlabel("Cosine similarity (FaceNet embeddings)"); ax[0].set_ylabel("Density"); ax[0].legend(loc="upper left"); panel(ax[0], "(a) LFW biometric scores")
+for nm, s, c in [("Trust engine", eng, C["blue"]), ("Biometric only", bio, C["verm"])]:
     fp = np.linspace(0, 1, 400); th = np.quantile(s[atk == 0], fp); tp = [(s[atk == 1] <= t).mean() for t in th]
     ax[1].plot(fp, tp, color=c, label=f"{nm} (AUC {auc_attack_low(s, atk):.3f})")
-ax[1].set_xlabel("false-positive rate (legitimate flagged)"); ax[1].set_ylabel("recall"); ax[1].set_xlim(0, .3); ax[1].set_title("(b) ROC on the real-biometric workload", fontsize=10); ax[1].legend(fontsize=8)
-for a in ax: a.grid(alpha=.25)
+ax[1].set_xlabel("False-positive rate (legitimate flagged)"); ax[1].set_ylabel("Recall"); ax[1].set_xlim(0, .3); ax[1].legend(loc="lower right"); panel(ax[1], "(b) ROC, real-biometric workload")
 fig.tight_layout(); fig.savefig(os.path.join(OUT_FIG, "fig9_real_biometric.png"))
