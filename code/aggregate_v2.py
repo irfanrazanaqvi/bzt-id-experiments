@@ -35,19 +35,25 @@ for d_ in sorted(glob.glob(f"{FR}/org3-run-*")):
 O = pd.DataFrame(rows); O.to_csv(os.path.join(out, "org3_runs.csv"), index=False)
 OS = O.groupby("policy").agg(["mean", "min", "max"]).drop(columns="rep"); OS.columns = ["_".join(c) for c in OS.columns]; OS["reps"] = O.groupby("policy").size()
 OS.reset_index().to_csv(os.path.join(out, "org3_summary.csv"), index=False)
-# ---- Indy
+# ---- Indy (parsed from the per-phase log lines, so runs whose last phase hung still count)
+import ast
 out = os.path.join(D, "indy"); os.makedirs(out, exist_ok=True); rows = []
 for d_ in sorted(glob.glob(f"{FR}/indy-run-*")):
     dst = os.path.join(out, os.path.basename(d_)); os.makedirs(dst, exist_ok=True)
-    for f in ["indy_bench.json", "system.txt", "von_network_commit.txt", "containers.txt", "genesis.txn"]:
+    for f in ["indy_bench.json", "indy_bench.log", "system.txt", "von_network_commit.txt", "containers.txt", "genesis.txn"]:
         if os.path.exists(os.path.join(d_, f)): shutil.copy(os.path.join(d_, f), dst)
-    if not os.path.exists(f"{d_}/indy_bench.json"): print("skip", d_); continue
-    j = json.load(open(f"{d_}/indy_bench.json"))
-    for kind in ["writes", "reads"]:
-        for p in j[kind]: rows.append({"run": os.path.basename(d_), "op": kind, "concurrency": p["concurrency"], "submitted": p["submitted"], "ok": p["ok"], "tx_per_s": p["tx_per_s"],
-                                       "mean_ms": p["latency"]["mean_ms"] if p["latency"] else np.nan, "p95_ms": p["latency"]["p95_ms"] if p["latency"] else np.nan})
+    if not os.path.exists(f"{d_}/indy_bench.log"): continue
+    ph = [ast.literal_eval(l) for l in open(f"{d_}/indy_bench.log") if l.startswith("{'submitted'")]
+    if not ph: shutil.rmtree(dst); continue
+    op = "writes"
+    for k, p in enumerate(ph):
+        if k > 0 and p["concurrency"] == 1: op = "reads"
+        rows.append({"run": os.path.basename(d_), "op": op, "concurrency": p["concurrency"], "submitted": p["submitted"], "ok": p["ok"], "failed": sum(p["failures"].values()),
+                     "tx_per_s": p["tx_per_s"], "mean_ms": p["latency"]["mean_ms"] if p["latency"] else np.nan, "p95_ms": p["latency"]["p95_ms"] if p["latency"] else np.nan})
+for d_ in glob.glob(os.path.join(out, "indy-run-*")):
+    if not os.listdir(d_) or not os.path.exists(os.path.join(d_, "indy_bench.log")): shutil.rmtree(d_)
 if rows:
     I = pd.DataFrame(rows); I.to_csv(os.path.join(out, "indy_runs.csv"), index=False)
-    IS = I.groupby(["op", "concurrency"])[["tx_per_s", "mean_ms", "p95_ms", "ok", "submitted"]].agg(["mean", "min", "max"]); IS.columns = ["_".join(c) for c in IS.columns]
-    IS.reset_index().to_csv(os.path.join(out, "indy_summary.csv"), index=False); print(IS.round(1).to_string())
+    IS = I[I.failed == 0].groupby(["op", "concurrency"])[["tx_per_s", "mean_ms", "p95_ms"]].agg(["mean", "min", "max"]); IS.columns = ["_".join(c) for c in IS.columns]
+    IS["runs"] = I[I.failed == 0].groupby(["op", "concurrency"]).size(); IS.reset_index().to_csv(os.path.join(out, "indy_summary.csv"), index=False); print(IS.round(1).to_string())
 pd.set_option("display.width", 250); print(S.reset_index().filter(regex="ordering|workers|flows_per_s|total_|reps|fail").round(1).to_string()); print(OS.round(1).to_string())
