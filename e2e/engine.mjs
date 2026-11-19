@@ -8,3 +8,10 @@ export function rng(seed) { let a = seed >>> 0; return () => { a = (a + 0x6D2B79
 const clip = v => Math.min(1, Math.max(0, v));
 export function legitContext(r) { const n = () => (r() + r() + r() - 1.5) / 1.5; // ~[-1,1]
   return { b: clip(0.92 + 0.05 * n()), d: clip(0.9 + 0.08 * n()), n: clip(0.9 + 0.08 * n()), g: clip(0.05 + 0.05 * n()), v: clip(0.1 + 0.08 * n()), t: clip(0.15 + 0.1 * n()) }; }
+// Contexts for the two non-ALLOW paths (used by run2.mjs):
+//  stepUpContext: correct holder on a new device and an unusual network -> T in [0.5, 0.75)
+//  attackContext: replayed credential from a remote location / impossible travel -> T < 0.5
+export function stepUpContext(r) { const n = () => (r() + r() + r() - 1.5) / 1.5;
+  return { b: clip(0.85 + 0.05 * n()), d: clip(0.2 + 0.1 * n()), n: clip(0.4 + 0.1 * n()), g: clip(0.3 + 0.1 * n()), v: clip(0.2 + 0.08 * n()), t: clip(0.3 + 0.1 * n()) }; }
+export function attackContext(r) { const n = () => (r() + r() + r() - 1.5) / 1.5;
+  return { b: clip(0.35 + 0.1 * n()), d: clip(0.1 + 0.08 * n()), n: clip(0.2 + 0.1 * n()), g: clip(0.85 + 0.08 * n()), v: clip(0.8 + 0.1 * n()), t: clip(0.6 + 0.1 * n()) }; }
