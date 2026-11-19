@@ -1,0 +1,51 @@
+name: indy-baseline
+# Hyperledger Indy identity-ledger baseline: von-network (4 Indy nodes on one runner), NYM writes and GET_NYM reads.
+on:
+  push:
+    branches: [indy]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  bench:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        rep: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: System information
+        run: |
+          mkdir -p out
+          { uname -a; lscpu | grep -E "Model name|^CPU\(s\)"; free -m; docker version; } > out/system.txt 2>&1 || true
+      - name: Start von-network (4 Indy nodes)
+        run: |
+          git clone -q https://github.com/bcgov/von-network.git
+          cd von-network && git rev-parse HEAD | tee ../out/von_network_commit.txt
+          ./manage build 2>&1 | tail -5
+          ./manage start --logs > ../out/von_start.log 2>&1 &
+          for i in $(seq 1 90); do curl -sf http://localhost:9000/genesis -o ../out/genesis.txn && break; sleep 5; done
+          sleep 20; curl -s http://localhost:9000/status | head -c 1500 | tee ../out/status.json; echo
+          docker ps --format '{{.Names}} {{.Image}}' | tee ../out/containers.txt
+      - name: Benchmark
+        run: |
+          pip install -q indy-vdr==0.4.2 base58 pynacl
+          python baselines/indy/indy_bench.py out/genesis.txn out/indy_bench.json 2>&1 | tee out/indy_bench.log
+      - name: Publish results to fabric-results branch
+        if: always()
+        run: |
+          RUN="indy-run-${{ github.run_number }}-rep${{ matrix.rep }}"
+          URL="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+          for attempt in 1 2 3 4 5 6; do
+            rm -rf res; git clone -q --depth 1 --branch fabric-results "$URL" res
+            mkdir -p "res/$RUN"; cp -r out/* "res/$RUN/" || true
+            cd res; git config user.name "github-actions"; git config user.email "github-actions@users.noreply.github.com"
+            git add -A; git commit -q -m "Indy baseline $RUN (job status: ${{ job.status }})" || true
+            if git push origin fabric-results; then break; fi
+            cd ..; sleep $((attempt * 5))
+          done
