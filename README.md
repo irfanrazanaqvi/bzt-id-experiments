@@ -1,6 +1,6 @@
 # BZT-ID — Experiment Code and Data
 
-Reproducibility package for the paper **"A Blockchain-Enabled Zero-Trust Digital Identity Architecture for Secure CNIC and Passport Services"** (BZT-ID).
+Reproducibility package for the paper **"Blockchain-Enabled Zero-Trust Digital Identity for Computerized National Identity Card (CNIC) and Passport Services: Design and Evaluation"** (BZT-ID).
 
 It contains the discrete-event simulation testbed (permissioned PBFT-style consortium ledger, DID/VC credential lifecycle, six-factor continuous Zero-Trust scoring engine), the four experiments reported in the paper, the generated datasets, and the figures. Every run uses fixed random seeds, so re-running reproduces the published numbers exactly.
 
@@ -72,7 +72,7 @@ validation, not as a model of a distributed national deployment.
 |---|---|---|
 | **Real biometric scores**: 9,164 public LFW images embedded with open-source FaceNet (VGGFace2 weights); 80,000 genuine/impostor pair scores, identities split into disjoint calibration/test halves | `.github/workflows/biometric-scores.yml`, `biometric/lfw_scores.py` | `data/biometric/` |
 | **Exp. 6**: trust engine with the real biometric factor (other five factors synthetic), biometric-only gate, post-hoc hybrid, supervised ML baselines, weight sensitivity | `code/exp6_real_biometric.py` | `data/exp6_*.csv`, `figures/fig9_real_biometric.png` |
-| **Fabric 3.0.0, Raft vs SmartBFT** (4 orderers), 2 runs x default/tuned batching | `.github/workflows/fabric-bft.yml` | `data/fabric3/` |
+| **Fabric 3.0.0, Raft vs SmartBFT** (4 orderers), 10 default-batching and 5 tuned-batching SmartBFT runs (see `data/fabric3/BATCH_NOTE.txt`) | `.github/workflows/fabric-bft.yml` | `data/fabric3/` |
 | **Baselines**: centralized SQLite service and ES256 token service, 3 runs each | `.github/workflows/baselines.yml`, `baselines/` | `data/baselines/`, `figures/fig10_baselines_bft.png` |
 | **Crash-fault injection** on Fabric 3.0.0 SmartBFT (4 orderers) vs a one-orderer Raft control, 2 runs each | `.github/workflows/fabric-faults.yml`, `faults/inject.sh` | `data/faults/` |
 | **ProVerif 2.05** symbolic verification of the credential protocol, with two negative controls | `.github/workflows/proverif.yml`, `proverif/` | `data/proverif/` |
@@ -82,11 +82,16 @@ validation, not as a model of a distributed national deployment.
 | **Learned weights and ablation** on the RBA login data (user-split, recalibrated threshold) | `rba/rba_eval.py` (rba2 branch workflow) | `data/rba2/` |
 | **CERT Insider Threat r4.2** (simulated, labelled): behavioural/device/time factors, ablation, supervised baselines | `cert/cert_eval.py`, `.github/workflows/cert-probe.yml` | `data/cert/` |
 | **Typing dynamics as the biometric factor**: CMU keystroke (fixed text) and SU-AIS BB-MAS (free text, IEEE DataPort 10.21227/rpaz-0h66) | `keystroke/keystroke_scores.py`, `bbmas/keystroke_eval.py`, `.github/workflows/biometrics2.yml`, `bbmas.yml` | `data/keystroke/`, `data/bbmas/` (derived pair scores only; raw BB-MAS is not redistributed, its page states no licence) |
+| **End-to-end flow v1**: BBS+ issuance, proof, trust engine, ledger status query and audit commit, Raft vs SmartBFT | `.github/workflows/fabric-e2e.yml`, `e2e/run.mjs` | `data/e2e/` |
+| **End-to-end flow v2**: status-list revocation (131,072-entry bitstring, digest on-chain), pairwise-pseudonym audit, 80/10/10 ALLOW/STEP-UP (TOTP)/DENY contexts, sequential and 1/2/4 client processes | `.github/workflows/fabric-e2e2.yml`, `e2e/run2.mjs` | `data/e2e2/` |
+| **Three-organization endorsement**: addOrg3, policies AND(2), AND(3), OutOf(2,3); sequential and closed-loop writes | `.github/workflows/fabric-org3.yml`, `e2e/endorse.mjs` | `data/org3/` |
+| **Hyperledger Indy baseline**: 4-node von-network, NYM writes and GET_NYM reads via indy-vdr | `.github/workflows/indy-baseline.yml`, `baselines/indy/indy_bench.py` | `data/indy/` |
+| **Recommended engine**: biometric floor plus learned weights on the LFW workload (5-fold CV) | `code/recommended_engine.py` | `data/recommended_engine_lfw*.csv` |
 
 Key results: with real LFW biometric scores the engine reaches ROC-AUC 0.982 (95% CI 0.980-0.984), 84.7% recall at 6.7%
 of legitimate sessions flagged; it misses most hardest-10% look-alike impostors (a proxy for spoofing, because LFW has no
-spoof samples), which a 1%-FAR biometric gate catches, so a hybrid policy flags 97.6%. SmartBFT write ceiling about 145 tx/s
-vs about 205-235 tx/s for Raft on the same Fabric version; minimal centralized/token baselines sustained 1,000 write tx/s.
+spoof samples), which a 1%-FAR biometric gate catches, so a hybrid policy flags 97.6%. SmartBFT write ceiling about 238 tx/s
+with tuned batching (165 tx/s with default batching), the same as Raft on the same Fabric version; minimal centralized/token baselines sustained 1,000 write tx/s.
 Only the biometric factor is real; no public dataset contains CNIC/passport transactions. Fabric/baseline numbers come from
 shared 4-vCPU runners and vary between runs.
 

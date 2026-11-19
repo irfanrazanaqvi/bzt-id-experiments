@@ -31,7 +31,13 @@ jobs:
         run: |
           git clone -q https://github.com/bcgov/von-network.git
           cd von-network && git rev-parse HEAD | tee ../out/von_network_commit.txt
-          ./manage build 2>&1 | tail -5
+          if docker pull ghcr.io/bcgov/von-network-base:latest; then
+            docker tag ghcr.io/bcgov/von-network-base:latest von-network-base
+          else
+            ./manage build > ../out/von_build.log 2>&1
+          fi
+          docker images | tee ../out/images.txt
+          docker image inspect von-network-base > /dev/null
           ./manage start > ../out/von_start.log 2>&1 < /dev/null
           for i in $(seq 1 240); do curl -sf http://localhost:9000/genesis -o ../out/genesis.txn && break; sleep 5; done
           test -s ../out/genesis.txn || { echo "genesis not available"; docker ps -a; tail -50 ../out/von_start.log; exit 1; }
