@@ -32,7 +32,11 @@ async function worker(label, perWorker, C, k) {
   const issuer = await bbs.generateKeyPair({ ciphersuite: cs }); const list = new StatusList(`L-${run}`);
   const cache = new Map(); // verifier cache: listId -> {version, bits}
   const fetchList = () => ({ blob: Buffer.from(list.blob), version: list.version }); // stands in for an HTTPS GET to the issuer
-  const pub = async () => { list.publish(); if (!DRY) await contract.submitTransaction("UpdateStatusList", list.id, String(list.version), list.digest, "nadra"); };
+  // A list update read-modify-writes one key; if the second organization's peer has not yet committed the
+  // previous version, the two endorsements differ (ABORTED). The issuer retries, as a production client would.
+  const pub = async () => { list.publish(); if (DRY) return;
+    for (let a = 0; ; a++) { try { await contract.submitTransaction("UpdateStatusList", list.id, String(list.version), list.digest, "nadra"); return; }
+      catch (e) { if (a >= 4) throw e; cnt("list_update_retry"); await new Promise(r => setTimeout(r, 50 * (a + 1))); } } };
   await pub();
   const extra = {};
   async function issue(i) {
@@ -77,7 +81,7 @@ async function worker(label, perWorker, C, k) {
     const tt = []; for (let i = 0; i < 50; i++) { const t = now(); if (sha(big.blob) !== big.digest) throw new Error("x"); zlib.gunzipSync(big.blob); tt.push(now() - t); }
     extra.revocation_check.list_1pct_gzip_bytes = big.blob.length; extra.revocation_check.list_1pct_hash_gunzip = stat(tt);
     for (let i = 0; i < 3; i++) { const c = await issue(LIST_BITS - 100 - i); await verify(c, i); } }    // warm-up
-  for (const n of Object.keys(T)) if (!n.startsWith("revoke")) delete T[n]; for (const n of Object.keys(X)) delete X[n];
+  for (const n of Object.keys(T)) if (!n.startsWith("revoke")) delete T[n]; for (const n of Object.keys(X)) if (n !== "list_update_retry") delete X[n];
   process.send({ ready: true });
   await new Promise(res => process.once("message", res));
   let next = 0; const t0 = now();
@@ -96,7 +100,7 @@ else {
   const { T, F, X } = merge(results); const done = X.flows_done || 0;
   const res = { label, workers: +W, concurrency_per_worker: +C, flows: +per * +W, wall_s: +wall.toFixed(2), completed_flows_per_s: +(done / wall).toFixed(2),
     host: { cpu_model: os.cpus()[0]?.model, cpus: os.cpus().length, node: process.version },
-    decisions: Object.fromEntries(Object.entries(X).filter(([n]) => n.startsWith("ctx_"))), list_refreshes: X.list_refresh || 0,
+    decisions: Object.fromEntries(Object.entries(X).filter(([n]) => n.startsWith("ctx_"))), list_refreshes: X.list_refresh || 0, list_update_retries: X.list_update_retry || 0,
     revocation_check: results[0].extra.revocation_check, failures: F, steps: Object.fromEntries(Object.entries(T).map(([n, v]) => [n, stat(v)])) };
   fs.writeFileSync(out, JSON.stringify(res, null, 1)); console.log(JSON.stringify(res, null, 1));
 }

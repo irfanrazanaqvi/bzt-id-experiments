@@ -6,6 +6,10 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+defaults:
+  run:
+    shell: bash
+
 jobs:
   bench:
     runs-on: ubuntu-24.04
@@ -29,7 +33,8 @@ jobs:
           cd von-network && git rev-parse HEAD | tee ../out/von_network_commit.txt
           ./manage build 2>&1 | tail -5
           ./manage start > ../out/von_start.log 2>&1 < /dev/null
-          for i in $(seq 1 90); do curl -sf http://localhost:9000/genesis -o ../out/genesis.txn && break; sleep 5; done
+          for i in $(seq 1 240); do curl -sf http://localhost:9000/genesis -o ../out/genesis.txn && break; sleep 5; done
+          test -s ../out/genesis.txn || { echo "genesis not available"; docker ps -a; tail -50 ../out/von_start.log; exit 1; }
           sleep 20; curl -s http://localhost:9000/status | head -c 1500 | tee ../out/status.json; echo
           docker ps --format '{{.Names}} {{.Image}}' | tee ../out/containers.txt
       - name: Benchmark

@@ -12,7 +12,7 @@ for f in sorted(glob.glob(f"{FR}/e2e2-run-*/e2e2_*.json")):
         p = os.path.join(os.path.dirname(f), extra)
         if os.path.exists(p): shutil.copy(p, dst)
     j = json.load(open(f)); m = re.search(r"-(bft|raft)-rep(\d)", run); r = {"ordering": m.group(1), "rep": int(m.group(2)), "workers": j["workers"], "conc_per_worker": j["concurrency_per_worker"],
-        "flows": j["flows"], "flows_per_s": j["completed_flows_per_s"], "cpu": j["host"]["cpu_model"], "failures": sum(j["failures"].values()), **{f"dec_{k}": v for k, v in j["decisions"].items()},
+        "flows": j["flows"], "flows_per_s": j["completed_flows_per_s"], "cpu": j["host"]["cpu_model"], "failures": sum(j["failures"].values()), "list_update_retries": j.get("list_update_retries", 0), **{f"dec_{k}": v for k, v in j["decisions"].items()},
         **{f"rev_{k}": v for k, v in j["revocation_check"].items() if not isinstance(v, dict)}, "rev_1pct_hash_gunzip_ms": j["revocation_check"].get("list_1pct_hash_gunzip", {}).get("mean_ms")}
     for k, s in j["steps"].items():
         if s: r[f"{k}_mean"] = s["mean_ms"]; r[f"{k}_p95"] = s["p95_ms"]
