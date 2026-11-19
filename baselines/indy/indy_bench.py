@@ -36,7 +36,7 @@ async def main(gen, out):
     for _ in range(5): await write(pool)  # warm-up
     dids = []
     async def wfn(i): dids.append(await write(pool))
-    for total, conc in [(100, 1), (400, 16), (800, 64)]:
+    for total, conc in [(30, 1), (400, 16), (800, 64), (2000, 256), (4000, 512), (6000, 1024)]:
         res["writes"].append(await phase(pool, wfn, total, conc)); print(res["writes"][-1], flush=True)
     async def rfn(i): await read(pool, dids[i % len(dids)])
     for total, conc in [(300, 1), (2000, 16), (4000, 64)]:
