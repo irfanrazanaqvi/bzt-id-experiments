@@ -17,9 +17,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ordering: [raft, bft]
-        batch: [default, tuned]
-        rep: [3, 4, 5]
+        ordering: [bft]
+        batch: [tunedfix]
+        rep: [1, 2, 3, 4, 5]
     env:
       FABRIC_VERSION: "3.0.0"
     steps:
@@ -50,11 +50,13 @@ jobs:
 
       - name: Configure orderer batch settings (${{ matrix.ordering }}/${{ matrix.batch }})
         run: |
-          F=fabric-samples/test-network/configtx/configtx.yaml
-          if [ "${{ matrix.batch }}" = "tuned" ]; then
-            sed -i 's/BatchTimeout: 2s/BatchTimeout: 200ms/; s/MaxMessageCount: 10$/MaxMessageCount: 100/' "$F"
-          fi
-          grep -n "BatchTimeout\|MaxMessageCount\|AbsoluteMaxBytes\|PreferredMaxBytes" "$F" | tee out/batch_config.txt
+          # The BFT network reads bft-config/configtx.yaml, the Raft network configtx/configtx.yaml; tune both.
+          for F in fabric-samples/test-network/configtx/configtx.yaml fabric-samples/test-network/bft-config/configtx.yaml; do
+            if [ "${{ matrix.batch }}" = "tuned" ] || [ "${{ matrix.batch }}" = "tunedfix" ]; then
+              sed -i 's/BatchTimeout: 2s/BatchTimeout: 200ms/; s/MaxMessageCount: 10$/MaxMessageCount: 100/' "$F"
+            fi
+            echo "== $F"; grep -n "BatchTimeout\|MaxMessageCount\|RequestBatchMaxCount\|RequestBatchMaxInterval\|RequestForwardTimeout" "$F"
+          done 2>&1 | tee out/batch_config.txt
 
       - name: Start network, create channel, deploy chaincode
         run: |
