@@ -1,0 +1,75 @@
+/home/runner/work/bzt-id-experiments/bzt-id-experiments/e2e/node_modules/@hyperledger/fabric-gateway/dist/client.js:37
+        return new Promise((resolve, reject) => this.#client.makeUnaryRequest(exports.endorseMethod, serialize, deserializeEndorseResponse, request, buildOptions(this.#defaultOptions.endorseOptions, options), newUnaryCallback(resolve, reject, (err) => new endorseerror_1.EndorseError(Object.assign(err, { transactionId: request.getTransactionId() })))));
+                                                                                                                                                                                                                                                            ^
+
+EndorseError: 10 ABORTED: failed to collect enough transaction endorsements, see attached details for more info
+    at /home/runner/work/bzt-id-experiments/bzt-id-experiments/e2e/node_modules/@hyperledger/fabric-gateway/dist/client.js:37:253
+    at Object.callback (/home/runner/work/bzt-id-experiments/bzt-id-experiments/e2e/node_modules/@hyperledger/fabric-gateway/dist/client.js:102:20)
+    at Object.onReceiveStatus (/home/runner/work/bzt-id-experiments/bzt-id-experiments/e2e/node_modules/@grpc/grpc-js/build/src/client.js:193:36)
+    at Object.onReceiveStatus (/home/runner/work/bzt-id-experiments/bzt-id-experiments/e2e/node_modules/@grpc/grpc-js/build/src/client-interceptors.js:367:141)
+    ... 2 lines matching cause stack trace ...
+    at process.processTicksAndRejections (node:internal/process/task_queues:84:11) {
+  code: 10,
+  details: [
+    {
+      address: 'peer0.org2.example.com:9051',
+      message: 'ProposalResponsePayloads do not match',
+      mspId: 'Org2MSP'
+    }
+  ],
+  cause: Error: 10 ABORTED: failed to collect enough transaction endorsements, see attached details for more info
+      at callErrorFromStatus (/home/runner/work/bzt-id-experiments/bzt-id-experiments/e2e/node_modules/@grpc/grpc-js/build/src/call.js:32:19)
+      at Object.onReceiveStatus (/home/runner/work/bzt-id-experiments/bzt-id-experiments/e2e/node_modules/@grpc/grpc-js/build/src/client.js:193:76)
+      at Object.onReceiveStatus (/home/runner/work/bzt-id-experiments/bzt-id-experiments/e2e/node_modules/@grpc/grpc-js/build/src/client-interceptors.js:367:141)
+      at Object.onReceiveStatus (/home/runner/work/bzt-id-experiments/bzt-id-experiments/e2e/node_modules/@grpc/grpc-js/build/src/client-interceptors.js:327:181)
+      at /home/runner/work/bzt-id-experiments/bzt-id-experiments/e2e/node_modules/@grpc/grpc-js/build/src/resolving-call.js:155:78
+      at process.processTicksAndRejections (node:internal/process/task_queues:84:11)
+  for call at
+      at Client.makeUnaryRequest (/home/runner/work/bzt-id-experiments/bzt-id-experiments/e2e/node_modules/@grpc/grpc-js/build/src/client.js:161:32)
+      at /home/runner/work/bzt-id-experiments/bzt-id-experiments/e2e/node_modules/@hyperledger/fabric-gateway/dist/client.js:37:62
+      at new Promise (<anonymous>)
+      at GatewayClientImpl.endorse (/home/runner/work/bzt-id-experiments/bzt-id-experiments/e2e/node_modules/@hyperledger/fabric-gateway/dist/client.js:37:16)
+      at ProposalImpl.endorse (/home/runner/work/bzt-id-experiments/bzt-id-experiments/e2e/node_modules/@hyperledger/fabric-gateway/dist/proposal.js:43:52)
+      at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+      at async ContractImpl.submitAsync (/home/runner/work/bzt-id-experiments/bzt-id-experiments/e2e/node_modules/@hyperledger/fabric-gateway/dist/contract.js:48:29)
+      at async ContractImpl.submit (/home/runner/work/bzt-id-experiments/bzt-id-experiments/e2e/node_modules/@hyperledger/fabric-gateway/dist/contract.js:40:27)
+      at async pub (file:///home/runner/work/bzt-id-experiments/bzt-id-experiments/e2e/run2.mjs:35:55)
+      at async worker (file:///home/runner/work/bzt-id-experiments/bzt-id-experiments/e2e/run2.mjs:71:77) {
+    code: 10,
+    details: 'failed to collect enough transaction endorsements, see attached details for more info',
+    metadata: Metadata {
+      internalRepr: Map(2) {
+        'content-type' => [ 'application/grpc' ],
+        'grpc-status-details-bin' => [
+          Buffer(211) [Uint8Array] [
+              8,  10,  18,  85, 102,  97, 105, 108, 101, 100,  32, 116,
+            111,  32,  99, 111, 108, 108, 101,  99, 116,  32, 101, 110,
+            111, 117, 103, 104,  32, 116, 114,  97, 110, 115,  97,  99,
+            116, 105, 111, 110,  32, 101, 110, 100, 111, 114, 115, 101,
+            109, 101, 110, 116, 115,  44,  32, 115, 101, 101,  32,  97,
+            116, 116,  97,  99, 104, 101, 100,  32, 100, 101, 116,  97,
+            105, 108, 115,  32, 102, 111, 114,  32, 109, 111, 114, 101,
+             32, 105, 110, 102, 111,  26, 120,  10,  39, 116, 121, 112,
+            101,  46, 103, 111,
+            ... 111 more items
+          ]
+        ]
+      },
+      options: {}
+    }
+  },
+  transactionId: 'd02bca594f2dac841008e7b7b46934f46d45402511e3ca8394818cf902d440a7'
+}
+
+Node.js v22.23.4
+file:///home/runner/work/bzt-id-experiments/bzt-id-experiments/e2e/fabric.mjs:22
+  await Promise.all(kids.map(c => new Promise((res, rej) => { c.once("message", m => m.ready ? res() : rej(new Error("worker failed: " + JSON.stringify(m)))); c.once("exit", code => rej(new Error("worker exited " + code))); })));
+                                                                                                                                                                                          ^
+
+Error: worker exited 1
+    at ChildProcess.<anonymous> (file:///home/runner/work/bzt-id-experiments/bzt-id-experiments/e2e/fabric.mjs:22:187)
+    at Object.onceWrapper (node:events:634:26)
+    at ChildProcess.emit (node:events:519:28)
+    at ChildProcess._handle.onexit (node:internal/child_process:293:12)
+
+Node.js v22.23.4
