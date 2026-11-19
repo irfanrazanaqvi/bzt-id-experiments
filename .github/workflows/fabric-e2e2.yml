@@ -71,6 +71,7 @@ jobs:
         run: |
           cd e2e && npm install --no-audit --no-fund 2>&1 | tail -2
           export TN="$GITHUB_WORKSPACE/fabric-samples/test-network"
+          node run2.mjs ${{ matrix.ordering }}-seq ../out/e2e2_seq.json 200 1 1 2>&1 | tail -80 | tee ../out/e2e2_seq.log
           node run2.mjs ${{ matrix.ordering }}-w1 ../out/e2e2_w1.json 240 16 1 2>&1 | tail -80 | tee ../out/e2e2_w1.log
           node run2.mjs ${{ matrix.ordering }}-w2 ../out/e2e2_w2.json 200 16 2 2>&1 | tail -80 | tee ../out/e2e2_w2.log
           node run2.mjs ${{ matrix.ordering }}-w4 ../out/e2e2_w4.json 150 16 4 2>&1 | tail -80 | tee ../out/e2e2_w4.log

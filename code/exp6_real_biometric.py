@@ -128,7 +128,7 @@ mlf = pd.DataFrame(ml); mlf.to_csv(os.path.join(OUT_DATA, "exp6_ml_baselines.csv
 
 # weight sensitivity on the real-biometric workload
 rg = np.random.default_rng(5); aucs = []
-for _ in range(300):
+for _ in range(500):
     w = rg.dirichlet(50 * np.array(w0)); aucs.append(auc_attack_low(trust(df, w), atk))
 pd.DataFrame({"auc": aucs}).to_csv(os.path.join(OUT_DATA, "exp6_weight_sensitivity.csv"), index=False)
 print("weight AUC min/med/max", np.min(aucs), np.median(aucs), np.max(aucs), "nominal", summ.AUC[0], "equal", auc_attack_low(trust(df, [1/6]*6), atk))
