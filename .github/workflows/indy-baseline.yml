@@ -9,7 +9,7 @@ permissions:
 jobs:
   bench:
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
@@ -28,7 +28,7 @@ jobs:
           git clone -q https://github.com/bcgov/von-network.git
           cd von-network && git rev-parse HEAD | tee ../out/von_network_commit.txt
           ./manage build 2>&1 | tail -5
-          ./manage start --logs > ../out/von_start.log 2>&1 &
+          ./manage start > ../out/von_start.log 2>&1 < /dev/null
           for i in $(seq 1 90); do curl -sf http://localhost:9000/genesis -o ../out/genesis.txn && break; sleep 5; done
           sleep 20; curl -s http://localhost:9000/status | head -c 1500 | tee ../out/status.json; echo
           docker ps --format '{{.Names}} {{.Image}}' | tee ../out/containers.txt
