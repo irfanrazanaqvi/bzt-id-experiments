@@ -46,6 +46,7 @@ jobs:
       - name: Benchmark
         run: |
           pip install -q indy-vdr==0.4.2 base58 pynacl
+          ulimit -n 65536 || ulimit -n $(ulimit -Hn); echo "open files limit: $(ulimit -n)" | tee out/ulimit.txt
           python baselines/indy/indy_bench.py out/genesis.txn out/indy_bench.json 2>&1 | tee out/indy_bench.log
       - name: Publish results to fabric-results branch
         if: always()
