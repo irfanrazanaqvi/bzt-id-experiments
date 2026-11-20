@@ -1,6 +1,6 @@
 # BZT-ID — Experiment Code and Data
 
-Reproducibility package for the paper **"Blockchain-Enabled Zero-Trust Digital Identity for Computerized National Identity Card (CNIC) and Passport Services: Design and Evaluation"** (BZT-ID).
+Reproducibility package for the paper **"Blockchain-Based Zero-Trust Identity Management for National ID and Passport Services: Design and Performance Evaluation"** (BZT-ID).
 
 It contains the discrete-event simulation testbed (permissioned PBFT-style consortium ledger, DID/VC credential lifecycle, six-factor continuous Zero-Trust scoring engine), the four experiments reported in the paper, the generated datasets, and the figures. Every run uses fixed random seeds, so re-running reproduces the published numbers exactly.
 
