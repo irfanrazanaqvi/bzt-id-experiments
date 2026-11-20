@@ -78,14 +78,15 @@ fab = lambda o, b, n, c: float(f3[(f3.ordering == o) & (f3.batch == b) & (f3.nam
 base = lambda m, op, off, c: float(bl[(bl["mode"] == m) & (bl.op == op) & (bl.offered == off)][c].iloc[0])
 labels = ["Centralized DB", "JWT service", "Fabric Raft, default", "Fabric Raft, tuned", "Fabric SmartBFT, default", "Fabric SmartBFT, tuned"]
 cols = [C["grey"], C["lgrey"], C["blue"], C["sky"], C["verm"], C["orange"]]
+hatches = [None, "..", None, "///", "\\\\\\", "xxx"]  # tuned and JWT bars hatched so pairs differ without colour
 lat = [base("central", "issue", 100, "lat_mean_ms"), base("jwt", "issue", 100, "lat_mean_ms")] + [fab(o, b, "issue-100tps", "lat_ms_mean") for o in ("raft", "bft") for b in ("default", "tuned")]
 wtp = [base("central", "issue", 300, "tp_mean"), base("jwt", "issue", 300, "tp_mean")] + [fab(o, b, "issue-300tps", "tp_mean") for o in ("raft", "bft") for b in ("default", "tuned")]
 rtp = [base("central", "verify", 600, "tp_mean"), base("jwt", "verify", 600, "tp_mean")] + [fab(o, b, "verify-600tps", "tp_mean") for o in ("raft", "bft") for b in ("default", "tuned")]
 fig, ax = plt.subplots(1, 3, figsize=(7, 3.1))
 for a, v, t, yl in zip(ax, [lat, wtp, rtp], ["(a) Write latency\nat 100 tx/s", "(b) Write throughput\nat 300 tx/s", "(c) Read throughput\nat 600 tx/s"], ["Mean latency (ms)", "Committed tx/s", "Committed tx/s"]):
-    a.bar(range(6), v, color=cols, edgecolor="#333", linewidth=0.4)
+    a.bar(range(6), v, color=cols, edgecolor="#222", linewidth=0.9, hatch=hatches)
     for i, x in enumerate(v): a.text(i, x, f"{x:.0f}", ha="center", va="bottom", fontsize=9.5, fontweight="bold")
     a.set_xticks([]); a.set_ylabel(yl); panel(a, t); a.set_ylim(0, max(v) * 1.15); a.grid(axis="x", visible=False)
 from matplotlib.patches import Patch
-fig.legend([Patch(fc=c, ec="#333", lw=0.4) for c in cols], labels, loc="lower center", ncol=3, bbox_to_anchor=(0.5, -0.01), fontsize=10)
+fig.legend([Patch(fc=c, ec="#222", lw=0.9, hatch=h) for c, h in zip(cols, hatches)], labels, loc="lower center", ncol=3, bbox_to_anchor=(0.5, -0.01), fontsize=10)
 fig.tight_layout(rect=(0, 0.14, 1, 1)); save(fig, "fig10_baselines_bft.png")
