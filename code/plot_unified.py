@@ -3,11 +3,11 @@ import os, numpy as np, pandas as pd
 from figstyle import *
 setup()
 H = os.path.dirname(os.path.abspath(__file__)); D = os.path.join(H, "..", "data"); F = os.path.join(H, "..", "figures")
-def save(fig, name): fig.savefig(os.path.join(F, name)); plt.close(fig); print("wrote", name)
+def save(fig, name): fig.savefig(os.path.join(F, name)); fig.savefig(os.path.join(F, name[:-4] + ".pdf")); plt.close(fig); print("wrote", name)
 
 # Fig 3
 d = pd.read_csv(os.path.join(D, "exp1_latency_vs_peers.csv"))
-fig, ax = plt.subplots(figsize=(6.5, 3.6))
+fig, ax = plt.subplots(figsize=(7, 3.0))
 ax.plot(d.num_peers, d.issue_latency_ms_mean, "-o", color=C["blue"], label="Issuance, mean")
 ax.plot(d.num_peers, d.issue_latency_ms_p95, "--o", color=C["blue"], mfc="white", label="Issuance, p95")
 ax.plot(d.num_peers, d.verify_latency_ms_mean, "-s", color=C["verm"], label="Verification, mean")
@@ -17,7 +17,7 @@ ax.legend(ncol=2, loc="center right", bbox_to_anchor=(1, 0.5)); fig.tight_layout
 
 # Fig 4
 d = pd.read_csv(os.path.join(D, "exp2_throughput_vs_load.csv"))
-fig, ax = plt.subplots(figsize=(6.5, 3.8))
+fig, ax = plt.subplots(figsize=(7, 3.0))
 for n, c, m in [(4, C["blue"], "o"), (10, C["green"], "s"), (22, C["verm"], "^")]:
     s = d[d.num_peers == n]; ax.plot(s.offered_load_tps, s.achieved_tps, "-" + m, color=c, label=f"N = {n} peers")
 mx = d.offered_load_tps.max(); ax.plot([0, mx], [0, mx], ":", color=C["grey"], label="Ideal (achieved = offered)")
@@ -26,7 +26,7 @@ ax.legend(loc="upper left"); fig.tight_layout(); save(fig, "fig4_throughput_vs_l
 
 # Figs 5, 6
 sc = pd.read_csv(os.path.join(D, "exp3_scores.csv"))
-fig, ax = plt.subplots(figsize=(6.5, 3.9)); bins = np.linspace(0, 1, 41)
+fig, ax = plt.subplots(figsize=(7, 3.0)); bins = np.linspace(0, 1, 41)
 spec = [("legitimate", "Legitimate", C["green"]), ("spoof", "Spoof", C["verm"]), ("credential_stuffing", "Credential stuffing", C["orange"]),
         ("impossible_travel", "Impossible travel", C["purple"]), ("insider_replay", "Insider replay", C["blue"])]
 for k, lab, c in spec:
@@ -50,7 +50,7 @@ ax.set_xlim(0, 1); ax.set_ylim(0, 1.02); ax.legend(loc="lower right"); fig.tight
 # Fig 7
 def issue(df):
     x = df[df["Name"].str.startswith("issue-")].copy(); x["rate"] = x["Name"].str.extract(r"issue-(\d+)tps").astype(int); return x.sort_values("rate")
-fig, ax = plt.subplots(1, 2, figsize=(6.5, 3.3))
+fig, ax = plt.subplots(1, 2, figsize=(7, 2.9))
 for key, lab, c, m in [("default", "Default batching (2 s, 10 tx/block)", C["blue"], "o"), ("tuned", "Tuned batching (200 ms, 100 tx/block)", C["verm"], "s")]:
     x = issue(pd.read_csv(os.path.join(D, "fabric", f"fabric_{key}.csv")))
     ax[0].plot(x["rate"], x["Avg Latency (s)"] * 1000, "-" + m, color=c, label=lab); ax[1].plot(x["rate"], x["Throughput (TPS)"], "-" + m, color=c, label=lab)
@@ -65,9 +65,9 @@ fig.tight_layout(rect=(0, 0.08, 1, 1)); save(fig, "fig7_fabric_real_benchmark.pn
 # Fig 8
 w = pd.read_csv(os.path.join(D, "exp5_weight_sensitivity.csv")); dd = pd.read_csv(os.path.join(D, "exp5_difficulty_sweep.csv"))
 rnd = w[w.weights != "nominal"]; nom = float(w[w.weights == "nominal"].auc.iloc[0])
-fig, ax = plt.subplots(1, 2, figsize=(6.5, 3.2))
+fig, ax = plt.subplots(1, 2, figsize=(7, 2.8))
 ax[0].hist(rnd.auc, bins=25, color=C["sky"], edgecolor="white"); ax[0].axvline(nom, color=C["ink"], ls="--", lw=1.2)
-ax[0].text(nom - 0.0003, ax[0].get_ylim()[1] * 0.97, "nominal ", fontsize=9, va="top", ha="right"); ax[0].set_xlabel("ROC-AUC (500 random weight vectors)"); ax[0].set_ylabel("Count")
+ax[0].text(nom - 0.0003, ax[0].get_ylim()[1] * 0.97, "nominal ", fontsize=10, va="top", ha="right"); ax[0].set_xlabel("ROC-AUC (500 random weight vectors)"); ax[0].set_ylabel("Count")
 ax[1].plot(dd.difficulty_d, dd.zte_auc, "-o", color=C["blue"], label="Trust engine"); ax[1].plot(dd.difficulty_d, dd.bio_only_auc, "-s", color=C["verm"], label="Biometric only")
 ax[1].set_xlabel("Attack difficulty $d$ (0 = Exp. 3)"); ax[1].set_ylabel("ROC-AUC"); ax[1].legend(loc="lower left")
 panel(ax[0], "(a) Sensitivity to feature weights"); panel(ax[1], "(b) Sensitivity to attack difficulty"); fig.tight_layout(); save(fig, "fig8_sensitivity.png")
@@ -81,11 +81,11 @@ cols = [C["grey"], C["lgrey"], C["blue"], C["sky"], C["verm"], C["orange"]]
 lat = [base("central", "issue", 100, "lat_mean_ms"), base("jwt", "issue", 100, "lat_mean_ms")] + [fab(o, b, "issue-100tps", "lat_ms_mean") for o in ("raft", "bft") for b in ("default", "tuned")]
 wtp = [base("central", "issue", 300, "tp_mean"), base("jwt", "issue", 300, "tp_mean")] + [fab(o, b, "issue-300tps", "tp_mean") for o in ("raft", "bft") for b in ("default", "tuned")]
 rtp = [base("central", "verify", 600, "tp_mean"), base("jwt", "verify", 600, "tp_mean")] + [fab(o, b, "verify-600tps", "tp_mean") for o in ("raft", "bft") for b in ("default", "tuned")]
-fig, ax = plt.subplots(1, 3, figsize=(6.5, 3.3))
+fig, ax = plt.subplots(1, 3, figsize=(7, 3.1))
 for a, v, t, yl in zip(ax, [lat, wtp, rtp], ["(a) Write latency\nat 100 tx/s", "(b) Write throughput\nat 300 tx/s", "(c) Read throughput\nat 600 tx/s"], ["Mean latency (ms)", "Committed tx/s", "Committed tx/s"]):
     a.bar(range(6), v, color=cols, edgecolor="#333", linewidth=0.4)
-    for i, x in enumerate(v): a.text(i, x, f"{x:.0f}", ha="center", va="bottom", fontsize=8.8)
+    for i, x in enumerate(v): a.text(i, x, f"{x:.0f}", ha="center", va="bottom", fontsize=9.5, fontweight="bold")
     a.set_xticks([]); a.set_ylabel(yl); panel(a, t); a.set_ylim(0, max(v) * 1.15); a.grid(axis="x", visible=False)
 from matplotlib.patches import Patch
-fig.legend([Patch(fc=c, ec="#333", lw=0.4) for c in cols], labels, loc="lower center", ncol=3, bbox_to_anchor=(0.5, -0.01), fontsize=9)
+fig.legend([Patch(fc=c, ec="#333", lw=0.4) for c in cols], labels, loc="lower center", ncol=3, bbox_to_anchor=(0.5, -0.01), fontsize=10)
 fig.tight_layout(rect=(0, 0.14, 1, 1)); save(fig, "fig10_baselines_bft.png")

@@ -136,7 +136,7 @@ print("weight AUC min/med/max", np.min(aucs), np.median(aucs), np.max(aucs), "no
 # figure
 from figstyle import setup, panel, C
 setup()
-fig, ax = plt.subplots(1, 2, figsize=(6.5, 3.2))
+fig, ax = plt.subplots(1, 2, figsize=(7, 2.8))
 b = np.linspace(-0.2, 1, 49)
 ax[0].hist(ti, bins=b, alpha=.6, color=C["verm"], label="Impostor pairs", density=True); ax[0].hist(tg, bins=b, alpha=.6, color=C["blue"], label="Genuine pairs", density=True)
 ax[0].set_xlabel("Cosine similarity (FaceNet embeddings)"); ax[0].set_ylabel("Density"); ax[0].legend(loc="upper left"); panel(ax[0], "(a) LFW biometric scores")
@@ -144,4 +144,4 @@ for nm, s, c in [("Trust engine", eng, C["blue"]), ("Biometric only", bio, C["ve
     fp = np.linspace(0, 1, 400); th = np.quantile(s[atk == 0], fp); tp = [(s[atk == 1] <= t).mean() for t in th]
     ax[1].plot(fp, tp, color=c, label=f"{nm} (AUC {auc_attack_low(s, atk):.3f})")
 ax[1].set_xlabel("False-positive rate (legitimate flagged)"); ax[1].set_ylabel("Recall"); ax[1].set_xlim(0, .3); ax[1].legend(loc="lower right"); panel(ax[1], "(b) ROC, real-biometric workload")
-fig.tight_layout(); fig.savefig(os.path.join(OUT_FIG, "fig9_real_biometric.png"))
+fig.tight_layout(); fig.savefig(os.path.join(OUT_FIG, "fig9_real_biometric.png")); fig.savefig(os.path.join(OUT_FIG, "fig9_real_biometric.pdf"))
