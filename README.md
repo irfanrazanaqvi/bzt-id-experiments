@@ -1,6 +1,6 @@
 # BZT-ID — Experiment Code and Data
 
-Reproducibility package for the paper **"Blockchain-Based Zero-Trust Identity Management for National ID and Passport Services: Design and Performance Evaluation"** (BZT-ID).
+Reproducibility package for the paper **"Blockchain-Based Zero-Trust Identity Management for National ID and Passport Services: Design and Evaluation"** (BZT-ID).
 
 It contains the discrete-event simulation testbed (permissioned PBFT-style consortium ledger, DID/VC credential lifecycle, six-factor continuous Zero-Trust scoring engine), the four experiments reported in the paper, the generated datasets, and the figures. Every run uses fixed random seeds, so re-running reproduces the published numbers exactly.
 
@@ -87,6 +87,8 @@ validation, not as a model of a distributed national deployment.
 | **Three-organization endorsement**: addOrg3, policies AND(2), AND(3), OutOf(2,3); sequential and closed-loop writes | `.github/workflows/fabric-org3.yml`, `e2e/endorse.mjs` | `data/org3/` |
 | **Hyperledger Indy baseline**: 4-node von-network, NYM writes and GET_NYM reads via indy-vdr | `.github/workflows/indy-baseline.yml`, `baselines/indy/indy_bench.py` | `data/indy/` |
 | **Recommended engine**: biometric floor plus learned weights on the LFW workload (5-fold CV) | `code/recommended_engine.py` | `data/recommended_engine_lfw*.csv` |
+| **Joint real-data engine test**: RBA login context joined with LFW face scores (impostor, look-alike, defeated biometric) | `.github/workflows/rba-joint.yml`, `rba/rba_joint.py` | `data/rba_lfw/` |
+| **Statistical tests** for headline performance comparisons (95% t-intervals, Welch, Mann-Whitney) | `code/stats_tests.py` | `data/stats_tests.csv` |
 
 Key results: with real LFW biometric scores the engine reaches ROC-AUC 0.982 (95% CI 0.980-0.984), 84.7% recall at 6.7%
 of legitimate sessions flagged; it misses most hardest-10% look-alike impostors (a proxy for spoofing, because LFW has no
