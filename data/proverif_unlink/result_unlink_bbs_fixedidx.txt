@@ -1,0 +1,212 @@
+Biprocess 0 (that is, the initial process):
+{1}new skI: key;
+{2}new skP: key;
+{3}out(net, (pk(skI),pk(skP)));
+{4}!
+{5}new hsA: bitstring;
+{6}new dobA: bitstring;
+{7}new idxA: bitstring;
+{8}new hsB: bitstring;
+{9}new dobB: bitstring;
+{10}new idxB: bitstring;
+(
+    {11}let skI_1: key = skI in
+    {12}let skP_1: key = skP in
+    {13}let hs: bitstring = hsA in
+    {14}let dob: bitstring = dobA in
+    {15}let idx: bitstring = idxA in
+    {16}let rp: bitstring = rp1 in
+    {17}let cred: bitstring = bbs(hs,dob,idx,skI_1) in
+    {18}in(net, n: bitstring);
+    {19}new r: bitstring;
+    {20}out(net, zkp(cred,hs,dob,idx,n,rp,r));
+    {21}new txid: bitstring;
+    {22}let rec: bitstring = (txid,rp,hmac(hs,rp),rp,ver,ALLOW) in
+    {23}out(net, (rec,sign(rec,skP_1)))
+) | (
+    {24}let skI_2: key = skI in
+    {25}let skP_2: key = skP in
+    {26}let hs_1: bitstring = choice[hsA,hsB] in
+    {27}let dob_1: bitstring = choice[dobA,dobB] in
+    {28}let idx_1: bitstring = choice[idxA,idxB] in
+    {29}let rp_1: bitstring = rp2 in
+    {30}let cred_1: bitstring = bbs(hs_1,dob_1,idx_1,skI_2) in
+    {31}in(net, n_1: bitstring);
+    {32}new r_1: bitstring;
+    {33}out(net, zkp(cred_1,hs_1,dob_1,idx_1,n_1,rp_1,r_1));
+    {34}new txid_1: bitstring;
+    {35}let rec_1: bitstring = (txid_1,rp_1,hmac(hs_1,rp_1),rp_1,ver,ALLOW) in
+    {36}out(net, (rec_1,sign(rec_1,skP_2)))
+)
+
+-- Observational equivalence in biprocess 1 (that is, biprocess 0, with let moved downwards):
+{1}new skI: key;
+{2}new skP: key;
+{3}out(net, (pk(skI),pk(skP)));
+{4}!
+{5}new hsA: bitstring;
+{6}new dobA: bitstring;
+{7}new idxA: bitstring;
+{8}new hsB: bitstring;
+{9}new dobB: bitstring;
+{10}new idxB: bitstring;
+(
+    {18}in(net, n: bitstring);
+    {19}new r: bitstring;
+    {15}let idx: bitstring = idxA in
+    {14}let dob: bitstring = dobA in
+    {13}let hs: bitstring = hsA in
+    {11}let skI_1: key = skI in
+    {17}let cred: bitstring = bbs(hs,dob,idx,skI_1) in
+    {16}let rp: bitstring = rp1 in
+    {20}out(net, zkp(cred,hs,dob,idx,n,rp,r));
+    {21}new txid: bitstring;
+    {22}let rec: bitstring = (txid,rp,hmac(hs,rp),rp,ver,ALLOW) in
+    {12}let skP_1: key = skP in
+    {23}out(net, (rec,sign(rec,skP_1)))
+) | (
+    {31}in(net, n_1: bitstring);
+    {32}new r_1: bitstring;
+    {28}let idx_1: bitstring = choice[idxA,idxB] in
+    {27}let dob_1: bitstring = choice[dobA,dobB] in
+    {26}let hs_1: bitstring = choice[hsA,hsB] in
+    {24}let skI_2: key = skI in
+    {30}let cred_1: bitstring = bbs(hs_1,dob_1,idx_1,skI_2) in
+    {29}let rp_1: bitstring = rp2 in
+    {33}out(net, zkp(cred_1,hs_1,dob_1,idx_1,n_1,rp_1,r_1));
+    {34}new txid_1: bitstring;
+    {35}let rec_1: bitstring = (txid_1,rp_1,hmac(hs_1,rp_1),rp_1,ver,ALLOW) in
+    {25}let skP_2: key = skP in
+    {36}out(net, (rec_1,sign(rec_1,skP_2)))
+)
+
+Translating the process into Horn clauses...
+Termination warning: v ≠ v_1 && attacker2(v_2,v) && attacker2(v_2,v_1) -> bad
+Selecting 0
+Termination warning: v ≠ v_1 && attacker2(v,v_2) && attacker2(v_1,v_2) -> bad
+Selecting 0
+Completing...
+Termination warning: v ≠ v_1 && attacker2(v_2,v) && attacker2(v_2,v_1) -> bad
+Selecting 0
+Termination warning: v ≠ v_1 && attacker2(v,v_2) && attacker2(v_1,v_2) -> bad
+Selecting 0
+goal reachable: bad
+
+Derivation:
+Abbreviations:
+idxA_1 = idxA[!1 = @sid]
+hsA_1 = hsA[!1 = @sid]
+dobA_1 = dobA[!1 = @sid]
+r_2 = r[n = choice[n_2,n_3],!1 = @sid]
+idxB_1 = idxB[!1 = @sid]
+hsB_1 = hsB[!1 = @sid]
+r_3 = r_1[n_1 = choice[n_4,n_5],!1 = @sid]
+dobB_1 = dobB[!1 = @sid]
+
+1. The message (pk(skI[]),pk(skP[])) (resp. (pk(skI[]),pk(skP[]))) may be sent to the attacker at output {3}.
+attacker2((pk(skI[]),pk(skP[])),(pk(skI[]),pk(skP[]))).
+
+2. By 1, the attacker may know (pk(skI[]),pk(skP[])) (resp. (pk(skI[]),pk(skP[]))).
+Using the function 1-proj-2-tuple the attacker may obtain pk(skI[]) (resp. pk(skI[])).
+attacker2(pk(skI[]),pk(skI[])).
+
+3. The attacker has some term n_4 (resp. n_5).
+attacker2(n_4,n_5).
+
+4. The message n_4 (resp. n_5) that the attacker may have by 3 may be received at input {31}.
+So the message zkp(bbs(hsA_1,dobA_1,idxA_1,skI[]),hsA_1,dobA_1,idxA_1,n_4,rp2[],r_3) (resp. zkp(bbs(hsB_1,dobB_1,idxB_1,skI[]),hsB_1,dobB_1,idxB_1,n_5,rp2[],r_3)) may be sent to the attacker at output {33}.
+attacker2(zkp(bbs(hsA_1,dobA_1,idxA_1,skI[]),hsA_1,dobA_1,idxA_1,n_4,rp2[],r_3),zkp(bbs(hsB_1,dobB_1,idxB_1,skI[]),hsB_1,dobB_1,idxB_1,n_5,rp2[],r_3)).
+
+5. By 4, the attacker may know zkp(bbs(hsA_1,dobA_1,idxA_1,skI[]),hsA_1,dobA_1,idxA_1,n_4,rp2[],r_3) (resp. zkp(bbs(hsB_1,dobB_1,idxB_1,skI[]),hsB_1,dobB_1,idxB_1,n_5,rp2[],r_3)).
+By 2, the attacker may know pk(skI[]) (resp. pk(skI[])).
+Using the function verifyzk the attacker may obtain (OVER18,idxA_1,n_4,rp2[],hmac(hsA_1,rp2[])) (resp. (OVER18,idxB_1,n_5,rp2[],hmac(hsB_1,rp2[]))).
+attacker2((OVER18,idxA_1,n_4,rp2[],hmac(hsA_1,rp2[])),(OVER18,idxB_1,n_5,rp2[],hmac(hsB_1,rp2[]))).
+
+6. By 5, the attacker may know (OVER18,idxA_1,n_4,rp2[],hmac(hsA_1,rp2[])) (resp. (OVER18,idxB_1,n_5,rp2[],hmac(hsB_1,rp2[]))).
+Using the function 2-proj-5-tuple the attacker may obtain idxA_1 (resp. idxB_1).
+attacker2(idxA_1,idxB_1).
+
+7. The attacker has some term n_2 (resp. n_3).
+attacker2(n_2,n_3).
+
+8. The message n_2 (resp. n_3) that the attacker may have by 7 may be received at input {18}.
+So the message zkp(bbs(hsA_1,dobA_1,idxA_1,skI[]),hsA_1,dobA_1,idxA_1,n_2,rp1[],r_2) (resp. zkp(bbs(hsA_1,dobA_1,idxA_1,skI[]),hsA_1,dobA_1,idxA_1,n_3,rp1[],r_2)) may be sent to the attacker at output {20}.
+attacker2(zkp(bbs(hsA_1,dobA_1,idxA_1,skI[]),hsA_1,dobA_1,idxA_1,n_2,rp1[],r_2),zkp(bbs(hsA_1,dobA_1,idxA_1,skI[]),hsA_1,dobA_1,idxA_1,n_3,rp1[],r_2)).
+
+9. By 8, the attacker may know zkp(bbs(hsA_1,dobA_1,idxA_1,skI[]),hsA_1,dobA_1,idxA_1,n_2,rp1[],r_2) (resp. zkp(bbs(hsA_1,dobA_1,idxA_1,skI[]),hsA_1,dobA_1,idxA_1,n_3,rp1[],r_2)).
+By 2, the attacker may know pk(skI[]) (resp. pk(skI[])).
+Using the function verifyzk the attacker may obtain (OVER18,idxA_1,n_2,rp1[],hmac(hsA_1,rp1[])) (resp. (OVER18,idxA_1,n_3,rp1[],hmac(hsA_1,rp1[]))).
+attacker2((OVER18,idxA_1,n_2,rp1[],hmac(hsA_1,rp1[])),(OVER18,idxA_1,n_3,rp1[],hmac(hsA_1,rp1[]))).
+
+10. By 9, the attacker may know (OVER18,idxA_1,n_2,rp1[],hmac(hsA_1,rp1[])) (resp. (OVER18,idxA_1,n_3,rp1[],hmac(hsA_1,rp1[]))).
+Using the function 2-proj-5-tuple the attacker may obtain idxA_1 (resp. idxA_1).
+attacker2(idxA_1,idxA_1).
+
+11. By 10, the attacker may know idxA_1 (resp. idxA_1).
+By 6, the attacker may know idxA_1 (resp. idxB_1).
+We have idxA_1 ≠ idxB_1.
+The attacker tests equality between the two terms he knows, which may allow it to distinguish cases.
+bad.
+
+
+Unified n_4 with n_5
+Unified n_2 with n_3
+A more detailed output of the traces is available with
+  set traceDisplay = long.
+
+new skI: key creating skI_3 at {1}
+
+new skP: key creating skP_3 at {2}
+
+out(net, (~M,~M_1)) with ~M = pk(skI_3), ~M_1 = pk(skP_3) at {3}
+
+new hsA: bitstring creating hsA_2 at {5} in copy a
+
+new dobA: bitstring creating dobA_2 at {6} in copy a
+
+new idxA: bitstring creating idxA_2 at {7} in copy a
+
+new hsB: bitstring creating hsB_2 at {8} in copy a
+
+new dobB: bitstring creating dobB_2 at {9} in copy a
+
+new idxB: bitstring creating idxB_2 at {10} in copy a
+
+in(net, a_1) at {18} in copy a
+
+new r: bitstring creating r_4 at {19} in copy a
+
+out(net, ~M_2) with ~M_2 = zkp(bbs(hsA_2,dobA_2,idxA_2,skI_3),hsA_2,dobA_2,idxA_2,a_1,rp1,r_4) at {20} in copy a
+
+new txid: bitstring creating txid_2 at {21} in copy a
+
+out(net, ((~M_3,~M_4,~M_5,~M_6,~M_7,~M_8),~M_9)) with ~M_3 = txid_2, ~M_4 = rp1, ~M_5 = hmac(hsA_2,rp1), ~M_6 = rp1, ~M_7 = ver, ~M_8 = ALLOW, ~M_9 = sign((txid_2,rp1,hmac(hsA_2,rp1),rp1,ver,ALLOW),skP_3) at {23} in copy a
+
+in(net, a_2) at {31} in copy a
+
+new r_1: bitstring creating r_5 at {32} in copy a
+
+out(net, ~M_10) with ~M_10 = choice[zkp(bbs(hsA_2,dobA_2,idxA_2,skI_3),hsA_2,dobA_2,idxA_2,a_2,rp2,r_5),zkp(bbs(hsB_2,dobB_2,idxB_2,skI_3),hsB_2,dobB_2,idxB_2,a_2,rp2,r_5)] at {33} in copy a
+
+new txid_1: bitstring creating txid_3 at {34} in copy a
+
+out(net, ((~M_11,~M_12,~M_13,~M_14,~M_15,~M_16),~M_17)) with ((~M_11,~M_12,~M_13,~M_14,~M_15,~M_16),~M_17) = choice[((txid_3,rp2,hmac(hsA_2,rp2),rp2,ver,ALLOW),sign((txid_3,rp2,hmac(hsA_2,rp2),rp2,ver,ALLOW),skP_3)),((txid_3,rp2,hmac(hsB_2,rp2),rp2,ver,ALLOW),sign((txid_3,rp2,hmac(hsB_2,rp2),rp2,ver,ALLOW),skP_3))] at {36} in copy a
+
+The attacker tests whether
+2-proj-5-tuple(verifyzk(~M_2,~M)) = idxA_2
+is equal to
+2-proj-5-tuple(verifyzk(~M_10,~M)) = choice[idxA_2,idxB_2].
+The result in the left-hand side is different from the result in the right-hand side.
+A trace has been found.
+RESULT Observational equivalence cannot be proved.
+Looking for simplified processes ...
+No simplified process found.
+
+--------------------------------------------------------------
+Verification summary:
+
+Observational equivalence cannot be proved.
+
+--------------------------------------------------------------
+
+time_s 0.01
