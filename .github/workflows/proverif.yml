@@ -31,6 +31,12 @@ jobs:
             echo "=== $v" ; proverif proverif/bztid_$v.pv > out/result_$v.txt 2>&1 || true
             grep -E "^RESULT|Error|error" out/result_$v.txt | tee -a out/summary.txt
           done
+          for f in proverif/unlink/unlink_*.pv; do
+            v=$(basename $f .pv); cp $f out/
+            echo "=== $v" | tee -a out/summary.txt
+            /usr/bin/time -f "time_s %e" proverif $f > out/result_$v.txt 2>&1 || true
+            grep -E "^RESULT|Error|error|time_s|trace has been found|Observational equivalence" out/result_$v.txt | tail -6 | tee -a out/summary.txt
+          done
           cat out/summary.txt
       - name: Publish
         if: always()
