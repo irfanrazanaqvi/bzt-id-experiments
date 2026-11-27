@@ -1,0 +1,98 @@
+Biprocess 0 (that is, the initial process):
+{1}new skI: key;
+{2}new skP: key;
+{3}out(net, (pk(skI),pk(skP)));
+{4}!
+{5}new hsA: bitstring;
+{6}new dobA: bitstring;
+{7}new hsB: bitstring;
+{8}new dobB: bitstring;
+(
+    {9}let skI_1: key = skI in
+    {10}let skP_1: key = skP in
+    {11}let hs: bitstring = hsA in
+    {12}let dob: bitstring = dobA in
+    {13}let rp: bitstring = rp1 in
+    {14}new idx: bitstring;
+    {15}let cred: bitstring = bbs(hs,dob,idx,skI_1) in
+    {16}in(net, n: bitstring);
+    {17}new r: bitstring;
+    {18}out(net, zkp(cred,hs,dob,idx,n,rp,r));
+    {19}new txid: bitstring;
+    {20}let rec: bitstring = (txid,rp,hmac(hs,rp),rp,ver,ALLOW) in
+    {21}out(net, (rec,sign(rec,skP_1)))
+) | (
+    {22}let skI_2: key = skI in
+    {23}let skP_2: key = skP in
+    {24}let hs_1: bitstring = choice[hsA,hsB] in
+    {25}let dob_1: bitstring = choice[dobA,dobB] in
+    {26}let rp_1: bitstring = rp2 in
+    {27}new idx_1: bitstring;
+    {28}let cred_1: bitstring = bbs(hs_1,dob_1,idx_1,skI_2) in
+    {29}in(net, n_1: bitstring);
+    {30}new r_1: bitstring;
+    {31}out(net, zkp(cred_1,hs_1,dob_1,idx_1,n_1,rp_1,r_1));
+    {32}new txid_1: bitstring;
+    {33}let rec_1: bitstring = (txid_1,rp_1,hmac(hs_1,rp_1),rp_1,ver,ALLOW) in
+    {34}out(net, (rec_1,sign(rec_1,skP_2)))
+)
+
+-- Observational equivalence in biprocess 1 (that is, biprocess 0, with let moved downwards):
+{1}new skI: key;
+{2}new skP: key;
+{3}out(net, (pk(skI),pk(skP)));
+{4}!
+{5}new hsA: bitstring;
+{6}new dobA: bitstring;
+{7}new hsB: bitstring;
+{8}new dobB: bitstring;
+(
+    {14}new idx: bitstring;
+    {16}in(net, n: bitstring);
+    {17}new r: bitstring;
+    {12}let dob: bitstring = dobA in
+    {11}let hs: bitstring = hsA in
+    {9}let skI_1: key = skI in
+    {15}let cred: bitstring = bbs(hs,dob,idx,skI_1) in
+    {13}let rp: bitstring = rp1 in
+    {18}out(net, zkp(cred,hs,dob,idx,n,rp,r));
+    {19}new txid: bitstring;
+    {20}let rec: bitstring = (txid,rp,hmac(hs,rp),rp,ver,ALLOW) in
+    {10}let skP_1: key = skP in
+    {21}out(net, (rec,sign(rec,skP_1)))
+) | (
+    {27}new idx_1: bitstring;
+    {29}in(net, n_1: bitstring);
+    {30}new r_1: bitstring;
+    {25}let dob_1: bitstring = choice[dobA,dobB] in
+    {24}let hs_1: bitstring = choice[hsA,hsB] in
+    {22}let skI_2: key = skI in
+    {28}let cred_1: bitstring = bbs(hs_1,dob_1,idx_1,skI_2) in
+    {26}let rp_1: bitstring = rp2 in
+    {31}out(net, zkp(cred_1,hs_1,dob_1,idx_1,n_1,rp_1,r_1));
+    {32}new txid_1: bitstring;
+    {33}let rec_1: bitstring = (txid_1,rp_1,hmac(hs_1,rp_1),rp_1,ver,ALLOW) in
+    {23}let skP_2: key = skP in
+    {34}out(net, (rec_1,sign(rec_1,skP_2)))
+)
+
+Translating the process into Horn clauses...
+Termination warning: v ≠ v_1 && attacker2(v_2,v) && attacker2(v_2,v_1) -> bad
+Selecting 0
+Termination warning: v ≠ v_1 && attacker2(v,v_2) && attacker2(v_1,v_2) -> bad
+Selecting 0
+Completing...
+Termination warning: v ≠ v_1 && attacker2(v_2,v) && attacker2(v_2,v_1) -> bad
+Selecting 0
+Termination warning: v ≠ v_1 && attacker2(v,v_2) && attacker2(v_1,v_2) -> bad
+Selecting 0
+RESULT Observational equivalence is true.
+
+--------------------------------------------------------------
+Verification summary:
+
+Observational equivalence is true.
+
+--------------------------------------------------------------
+
+time_s 0.01

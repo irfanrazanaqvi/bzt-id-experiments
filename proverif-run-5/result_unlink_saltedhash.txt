@@ -1,0 +1,161 @@
+Biprocess 0 (that is, the initial process):
+{1}new skI: key;
+{2}new skP: key;
+{3}out(net, (pk(skI),pk(skP)));
+{4}!
+{5}new skA: key;
+{6}new dobA: bitstring;
+{7}new sA: bitstring;
+{8}new idxA: bitstring;
+{9}new skB: key;
+{10}new dobB: bitstring;
+{11}new sB: bitstring;
+{12}new idxB: bitstring;
+{13}let credA: bitstring = sign((pk(skA),h(dobA,sA),idxA),skI) in
+{14}let credB: bitstring = sign((pk(skB),h(dobB,sB),idxB),skI) in
+(
+    {15}let skH: key = skA in
+    {16}let rp: bitstring = rp1 in
+    {17}in(net, n: bitstring);
+    {18}out(net, (credA,sign((n,rp),skH)))
+) | (
+    {19}let cred: bitstring = choice[credA,credB] in
+    {20}let skH_1: key = choice[skA,skB] in
+    {21}let rp_1: bitstring = rp2 in
+    {22}in(net, n_1: bitstring);
+    {23}out(net, (cred,sign((n_1,rp_1),skH_1)))
+)
+
+-- Observational equivalence in biprocess 1 (that is, biprocess 0, with let moved downwards):
+{1}new skI: key;
+{2}new skP: key;
+{3}out(net, (pk(skI),pk(skP)));
+{4}!
+{5}new skA: key;
+{6}new dobA: bitstring;
+{7}new sA: bitstring;
+{8}new idxA: bitstring;
+{9}new skB: key;
+{10}new dobB: bitstring;
+{11}new sB: bitstring;
+{12}new idxB: bitstring;
+{13}let credA: bitstring = sign((pk(skA),h(dobA,sA),idxA),skI) in
+(
+    {17}in(net, n: bitstring);
+    {16}let rp: bitstring = rp1 in
+    {15}let skH: key = skA in
+    {18}out(net, (credA,sign((n,rp),skH)))
+) | (
+    {22}in(net, n_1: bitstring);
+    {21}let rp_1: bitstring = rp2 in
+    {20}let skH_1: key = choice[skA,skB] in
+    {14}let credB: bitstring = sign((pk(skB),h(dobB,sB),idxB),skI) in
+    {19}let cred: bitstring = choice[credA,credB] in
+    {23}out(net, (cred,sign((n_1,rp_1),skH_1)))
+)
+
+Translating the process into Horn clauses...
+Termination warning: v ≠ v_1 && attacker2(v_2,v) && attacker2(v_2,v_1) -> bad
+Selecting 0
+Termination warning: v ≠ v_1 && attacker2(v,v_2) && attacker2(v_1,v_2) -> bad
+Selecting 0
+Completing...
+Termination warning: v ≠ v_1 && attacker2(v_2,v) && attacker2(v_2,v_1) -> bad
+Selecting 0
+Termination warning: v ≠ v_1 && attacker2(v,v_2) && attacker2(v_1,v_2) -> bad
+Selecting 0
+goal reachable: bad
+
+Derivation:
+Abbreviations:
+skA_1 = skA[!1 = @sid]
+dobA_1 = dobA[!1 = @sid]
+sA_1 = sA[!1 = @sid]
+idxA_1 = idxA[!1 = @sid]
+skB_1 = skB[!1 = @sid]
+dobB_1 = dobB[!1 = @sid]
+sB_1 = sB[!1 = @sid]
+idxB_1 = idxB[!1 = @sid]
+
+1. The attacker has some term n_2 (resp. n_3).
+attacker2(n_2,n_3).
+
+2. The message n_2 (resp. n_3) that the attacker may have by 1 may be received at input {22}.
+So the message (sign((pk(skA_1),h(dobA_1,sA_1),idxA_1),skI[]),sign((n_2,rp2[]),skA_1)) (resp. (sign((pk(skB_1),h(dobB_1,sB_1),idxB_1),skI[]),sign((n_3,rp2[]),skB_1))) may be sent to the attacker at output {23}.
+attacker2((sign((pk(skA_1),h(dobA_1,sA_1),idxA_1),skI[]),sign((n_2,rp2[]),skA_1)),(sign((pk(skB_1),h(dobB_1,sB_1),idxB_1),skI[]),sign((n_3,rp2[]),skB_1))).
+
+3. By 2, the attacker may know (sign((pk(skA_1),h(dobA_1,sA_1),idxA_1),skI[]),sign((n_2,rp2[]),skA_1)) (resp. (sign((pk(skB_1),h(dobB_1,sB_1),idxB_1),skI[]),sign((n_3,rp2[]),skB_1))).
+Using the function 1-proj-2-tuple the attacker may obtain sign((pk(skA_1),h(dobA_1,sA_1),idxA_1),skI[]) (resp. sign((pk(skB_1),h(dobB_1,sB_1),idxB_1),skI[])).
+attacker2(sign((pk(skA_1),h(dobA_1,sA_1),idxA_1),skI[]),sign((pk(skB_1),h(dobB_1,sB_1),idxB_1),skI[])).
+
+4. The attacker has some term n_4 (resp. n_5).
+attacker2(n_4,n_5).
+
+5. The message n_4 (resp. n_5) that the attacker may have by 4 may be received at input {17}.
+So the message (sign((pk(skA_1),h(dobA_1,sA_1),idxA_1),skI[]),sign((n_4,rp1[]),skA_1)) (resp. (sign((pk(skA_1),h(dobA_1,sA_1),idxA_1),skI[]),sign((n_5,rp1[]),skA_1))) may be sent to the attacker at output {18}.
+attacker2((sign((pk(skA_1),h(dobA_1,sA_1),idxA_1),skI[]),sign((n_4,rp1[]),skA_1)),(sign((pk(skA_1),h(dobA_1,sA_1),idxA_1),skI[]),sign((n_5,rp1[]),skA_1))).
+
+6. By 5, the attacker may know (sign((pk(skA_1),h(dobA_1,sA_1),idxA_1),skI[]),sign((n_4,rp1[]),skA_1)) (resp. (sign((pk(skA_1),h(dobA_1,sA_1),idxA_1),skI[]),sign((n_5,rp1[]),skA_1))).
+Using the function 1-proj-2-tuple the attacker may obtain sign((pk(skA_1),h(dobA_1,sA_1),idxA_1),skI[]) (resp. sign((pk(skA_1),h(dobA_1,sA_1),idxA_1),skI[])).
+attacker2(sign((pk(skA_1),h(dobA_1,sA_1),idxA_1),skI[]),sign((pk(skA_1),h(dobA_1,sA_1),idxA_1),skI[])).
+
+7. By 6, the attacker may know sign((pk(skA_1),h(dobA_1,sA_1),idxA_1),skI[]) (resp. sign((pk(skA_1),h(dobA_1,sA_1),idxA_1),skI[])).
+By 3, the attacker may know sign((pk(skA_1),h(dobA_1,sA_1),idxA_1),skI[]) (resp. sign((pk(skB_1),h(dobB_1,sB_1),idxB_1),skI[])).
+We have sign((pk(skA_1),h(dobA_1,sA_1),idxA_1),skI[]) ≠ sign((pk(skB_1),h(dobB_1,sB_1),idxB_1),skI[]).
+The attacker tests equality between the two terms he knows, which may allow it to distinguish cases.
+bad.
+
+
+Unified n_2 with n_3
+Unified n_4 with n_5
+A more detailed output of the traces is available with
+  set traceDisplay = long.
+
+new skI: key creating skI_1 at {1}
+
+new skP: key creating skP_1 at {2}
+
+out(net, (~M,~M_1)) with ~M = pk(skI_1), ~M_1 = pk(skP_1) at {3}
+
+new skA: key creating skA_2 at {5} in copy a
+
+new dobA: bitstring creating dobA_2 at {6} in copy a
+
+new sA: bitstring creating sA_2 at {7} in copy a
+
+new idxA: bitstring creating idxA_2 at {8} in copy a
+
+new skB: key creating skB_2 at {9} in copy a
+
+new dobB: bitstring creating dobB_2 at {10} in copy a
+
+new sB: bitstring creating sB_2 at {11} in copy a
+
+new idxB: bitstring creating idxB_2 at {12} in copy a
+
+in(net, a_1) at {17} in copy a
+
+out(net, (~M_2,~M_3)) with ~M_2 = sign((pk(skA_2),h(dobA_2,sA_2),idxA_2),skI_1), ~M_3 = sign((a_1,rp1),skA_2) at {18} in copy a
+
+in(net, a_2) at {22} in copy a
+
+out(net, (~M_4,~M_5)) with (~M_4,~M_5) = choice[(sign((pk(skA_2),h(dobA_2,sA_2),idxA_2),skI_1),sign((a_2,rp2),skA_2)),(sign((pk(skB_2),h(dobB_2,sB_2),idxB_2),skI_1),sign((a_2,rp2),skB_2))] at {23} in copy a
+
+The attacker tests whether
+~M_2 = sign((pk(skA_2),h(dobA_2,sA_2),idxA_2),skI_1)
+is equal to
+~M_4 = sign(choice[(pk(skA_2),h(dobA_2,sA_2),idxA_2),(pk(skB_2),h(dobB_2,sB_2),idxB_2)],skI_1).
+The result in the left-hand side is different from the result in the right-hand side.
+A trace has been found.
+RESULT Observational equivalence cannot be proved.
+Looking for simplified processes ...
+No simplified process found.
+
+--------------------------------------------------------------
+Verification summary:
+
+Observational equivalence cannot be proved.
+
+--------------------------------------------------------------
+
+time_s 0.00

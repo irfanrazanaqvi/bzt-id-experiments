@@ -1,0 +1,36 @@
+(* BZT-ID presentation unlinkability across colluding relying parties (ProVerif diff-equivalence).
+   Attacker: Dolev-Yao network attacker who also controls every relying party (RP) and reads the ledger.
+   The issuer (registrar) is honest; issuer-RP collusion is outside this model (see the leakage model).
+   Left system: one holder presents to RP1 and RP2. Right system: two different holders do.
+   Unlinkability holds iff the attacker cannot distinguish the two (observational equivalence).
+   Abstractions: BBS+ derived proofs are abstract randomised zero-knowledge terms (no computational
+   guarantee is claimed); the HMAC pseudonym is an ideal keyed function; ledger timestamps and
+   ordering are not modelled (covered by the leakage model). VARIANT: salted-hash selective disclosure (SD-JWT/mdoc style), single credential, holder-bound, one-time status index (expected: attack; sanity check of model sensitivity) *)
+free net: channel.
+type key.
+fun pk(key): key.
+fun sign(bitstring, key): bitstring.
+reduc forall m: bitstring, k: key; checksign(sign(m, k), pk(k)) = m.
+fun h(bitstring, bitstring): bitstring.          (* salted hash commitment *)
+fun hmac(bitstring, bitstring): bitstring.       (* pairwise pseudonym HMAC(holder secret, RP id) *)
+fun bbs(bitstring, bitstring, bitstring, key): bitstring.          (* BBS+ signature over (holder secret, hidden attribute, status index) *)
+fun zkp(bitstring, bitstring, bitstring, bitstring, bitstring, bitstring, bitstring): bitstring.
+   (* zkp(cred, hs, dob, idx, nonce, rp, r): BBS+ presentation, randomised by r *)
+const OVER18: bitstring.                          (* the disclosed predicate, true for every holder in the scenario *)
+reduc forall hs: bitstring, dob: bitstring, i: bitstring, n: bitstring, rp: bitstring, r: bitstring, k: key;
+   verifyzk(zkp(bbs(hs, dob, i, k), hs, dob, i, n, rp, r), pk(k)) = (OVER18, i, n, rp, hmac(hs, rp)).
+const ALLOW: bitstring.
+free rp1, rp2: bitstring.                         (* two distinct RPs; both controlled by the attacker *)
+free ver: bitstring.                              (* status-list version read from the ledger *)
+
+let Present(cred: bitstring, skH: key, rp: bitstring) =
+  in(net, n: bitstring);
+  out(net, (cred, sign((n, rp), skH))).
+
+process
+  new skI: key; new skP: key; out(net, (pk(skI), pk(skP)));
+  ! ( new skA: key; new dobA: bitstring; new sA: bitstring; new idxA: bitstring;
+      new skB: key; new dobB: bitstring; new sB: bitstring; new idxB: bitstring;
+      let credA = sign((pk(skA), h(dobA, sA), idxA), skI) in      (* each holder is issued one credential *)
+      let credB = sign((pk(skB), h(dobB, sB), idxB), skI) in
+      ( Present(credA, skA, rp1) | Present(choice[credA, credB], choice[skA, skB], rp2) ) )
