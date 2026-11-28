@@ -48,3 +48,33 @@ function makeCtx() {
   await assert.rejects(() => c.RecordVerificationP(ctx, 'BANK-1', ps, 'L1', '2', 'MAYBE', 'x'), /bad decision/);
   console.log('chaincode unit tests passed');
 })().catch(e => { console.error(e); process.exit(1); });
+
+// v3: H1 commitment-only issuance and H4 batched audit anchoring
+(async () => {
+  const crypto = require('crypto');
+  const M = require('../lib/merkle');
+  const c = new BztContract();
+  const ctx = makeCtx();
+  const salt = crypto.randomBytes(32).toString('hex');
+  const com = crypto.createHash('sha256').update(['c9', 'did:bzt:carol', 'L1', '77', salt].join('|')).digest('hex');
+  await c.IssueCredentialH(ctx, com, 'NADRA');
+  await assert.rejects(() => c.IssueCredentialH(ctx, com, 'NADRA'), /already exists/);
+  await assert.rejects(() => c.IssueCredentialH(ctx, 'xyz', 'NADRA'), /64 hex/);
+  const stored = ctx.state.get('cred:' + com).toString();
+  for (const leak of ['did:bzt:carol', 'L1', '77', 'c9']) assert.ok(!stored.includes('"' + leak), 'H1 leaks ' + leak);
+  assert.strictEqual(JSON.parse(await c.GetCommitment(ctx, com)).found, true);
+  // gateway batch of 1000 decisions
+  const recs = Array.from({ length: 1000 }, (_, i) => JSON.stringify({ nym: crypto.randomBytes(32).toString('hex'), d: i % 3 ? 'ALLOW' : 'STEP_UP', t: i }));
+  const leaves = recs.map(M.leafHash), lv = M.build(leaves), root = M.root(lv);
+  await c.AnchorAuditRoot(ctx, 'GW-BANK-1', '2026-11-28T10', root, '1000');
+  await assert.rejects(() => c.AnchorAuditRoot(ctx, 'GW-BANK-1', '2026-11-28T10', root, '1000'), /already anchored/);
+  for (const i of [0, 1, 499, 998, 999]) {
+    const r = JSON.parse(await c.VerifyAuditInclusion(ctx, 'GW-BANK-1', '2026-11-28T10', leaves[i], JSON.stringify(M.proof(lv, i))));
+    assert.strictEqual(r.included, true, 'proof ' + i);
+  }
+  const bad = JSON.parse(await c.VerifyAuditInclusion(ctx, 'GW-BANK-1', '2026-11-28T10', M.leafHash('forged'), JSON.stringify(M.proof(lv, 3))));
+  assert.strictEqual(bad.included, false);
+  const anchored = [...ctx.state.values()].map(String).join('');
+  assert.ok(!recs.some(r => anchored.includes(JSON.parse(r).nym)), 'H4 leaks a pseudonym');
+  console.log('H1/H4 unit tests passed');
+})().catch(e => { console.error(e); process.exit(1); });

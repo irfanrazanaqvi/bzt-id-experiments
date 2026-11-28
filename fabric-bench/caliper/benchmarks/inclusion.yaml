@@ -1,0 +1,61 @@
+test:
+  name: bzt-h4-inclusion
+  description: H4 inclusion checks (read-only)
+  workers:
+    number: 1
+  rounds:
+  - label: anchorFixed
+    txNumber: 1
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 1
+    workload:
+      module: workload/bzt-workload.js
+      arguments:
+        op: anchorFixed
+        contractId: bzt
+  - label: inclusion-100
+    txDuration: 30
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 100
+    workload:
+      module: workload/bzt-workload.js
+      arguments:
+        op: inclusion
+        contractId: bzt
+  - label: inclusion-200
+    txDuration: 30
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 200
+    workload:
+      module: workload/bzt-workload.js
+      arguments:
+        op: inclusion
+        contractId: bzt
+  - label: inclusion-400
+    txDuration: 30
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 400
+    workload:
+      module: workload/bzt-workload.js
+      arguments:
+        op: inclusion
+        contractId: bzt
+  - label: inclusion-600
+    txDuration: 30
+    rateControl:
+      type: fixed-rate
+      opts:
+        tps: 600
+    workload:
+      module: workload/bzt-workload.js
+      arguments:
+        op: inclusion
+        contractId: bzt

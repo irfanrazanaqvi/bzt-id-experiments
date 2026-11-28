@@ -4,6 +4,7 @@
  * Only credential-hash commitments and lifecycle-event metadata are written
  * on-chain (paper, Section 4.5). Raw biometrics / PII never reach the ledger.
  */
+const crypto = require('crypto');
 const { Contract } = require('fabric-contract-api');
 
 const CRED = 'cred:';
@@ -114,6 +115,63 @@ class BztContract extends Contract {
     await ctx.stub.putState(key, Buffer.from(JSON.stringify(ev)));
     return key;
   }
+  // ---------------- v3: hardening H1 (commitment-only issuance) and H4 (batched audit) ----------------
+  // H1. The ledger stores only a hiding commitment c = SHA-256(credId || subjectDid || listId ||
+  // statusIndex || salt), computed by the issuer; the subject DID and the status-list slot stay
+  // off-chain. A reader of world state learns that the issuer issued something at time t, nothing more.
+
+  /** Issue a credential as a hiding commitment only (write). */
+  async IssueCredentialH(ctx, commitment, issuerId) {
+    if (!/^[0-9a-f]{64}$/.test(commitment)) throw new Error('commitment must be 64 hex chars');
+    const key = CRED + commitment;
+    const existing = await ctx.stub.getState(key);
+    if (existing && existing.length > 0) throw new Error('commitment already exists');
+    const rec = { commitment, issuerId, issuedAt: this._ts(ctx) };
+    await ctx.stub.putState(key, Buffer.from(JSON.stringify(rec)));
+    return JSON.stringify({ commitment });
+  }
+
+  /** Check that a commitment was issued (query / evaluate). The verifier opens it off-chain. */
+  async GetCommitment(ctx, commitment) {
+    const data = await ctx.stub.getState(CRED + commitment);
+    if (!data || data.length === 0) return JSON.stringify({ found: false });
+    return JSON.stringify({ found: true, ...JSON.parse(data.toString()) });
+  }
+
+  // H4. A relying-party gateway keeps its per-decision audit records off-chain and anchors one
+  // Merkle root per period. One write covers a whole batch, and the ledger holds no per-holder
+  // record, so neither the pseudonym nor the decision time of any single presentation is on-chain.
+
+  /** Anchor the Merkle root of a gateway's audit batch for one period (write). */
+  async AnchorAuditRoot(ctx, gatewayId, period, root, count) {
+    if (!/^[0-9a-f]{64}$/.test(root)) throw new Error('root must be 64 hex chars');
+    const n = parseInt(count, 10);
+    if (!Number.isInteger(n) || n < 1) throw new Error('bad count');
+    const key = ctx.stub.createCompositeKey ? ctx.stub.createCompositeKey('aroot', [gatewayId, period]) : `aroot:${gatewayId}:${period}`;
+    const existing = await ctx.stub.getState(key);
+    if (existing && existing.length > 0) throw new Error('period already anchored');
+    const rec = { gatewayId, period, root, count: n, at: this._ts(ctx) };
+    await ctx.stub.putState(key, Buffer.from(JSON.stringify(rec)));
+    return JSON.stringify(rec);
+  }
+
+  /**
+   * Check that an audit record (leaf hash) is in an anchored batch (query / evaluate).
+   * proof is a JSON array of {h: hex, left: bool} siblings from leaf to root.
+   */
+  async VerifyAuditInclusion(ctx, gatewayId, period, leaf, proof) {
+    const key = ctx.stub.createCompositeKey ? ctx.stub.createCompositeKey('aroot', [gatewayId, period]) : `aroot:${gatewayId}:${period}`;
+    const data = await ctx.stub.getState(key);
+    if (!data || data.length === 0) return JSON.stringify({ included: false, reason: 'NO_ROOT' });
+    const rec = JSON.parse(data.toString());
+    let h = leaf;
+    for (const s of JSON.parse(proof)) h = merkleNode(s.left ? s.h : h, s.left ? h : s.h);
+    return JSON.stringify({ included: h === rec.root });
+  }
+}
+
+function merkleNode(a, b) {
+  return crypto.createHash('sha256').update(Buffer.from('01' + a + b, 'hex')).digest('hex');
 }
 
 module.exports = BztContract;

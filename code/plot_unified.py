@@ -27,15 +27,17 @@ ax.legend(loc="upper left"); fig.tight_layout(); save(fig, "fig4_throughput_vs_l
 # Figs 5, 6
 sc = pd.read_csv(os.path.join(D, "exp3_scores.csv"))
 fig, ax = plt.subplots(figsize=(7, 3.0)); bins = np.linspace(0, 1, 41)
-spec = [("legitimate", "Legitimate", C["green"]), ("spoof", "Spoof", C["verm"]), ("credential_stuffing", "Credential stuffing", C["orange"]),
-        ("impossible_travel", "Impossible travel", C["purple"]), ("insider_replay", "Insider replay", C["blue"])]
-for k, lab, c in spec:
+spec = [("legitimate", "Legitimate", C["green"], "-"), ("spoof", "Spoof", C["verm"], "--"), ("credential_stuffing", "Credential stuffing", C["orange"], ":"),
+        ("impossible_travel", "Impossible travel", "#B5568F", "-."), ("insider_replay", "Insider replay", C["blue"], (0, (6, 1.5, 1, 1.5, 1, 1.5)))]
+for k, lab, c, ls in spec:  # each class has its own line style, so colour is not the only cue
     v = sc[sc.label == k].zte_score
-    ax.hist(v, bins=bins, density=True, histtype="stepfilled", alpha=0.25, color=c); ax.hist(v, bins=bins, density=True, histtype="step", color=c, lw=1.4, label=lab)
+    ax.hist(v, bins=bins, density=True, histtype="stepfilled", alpha=0.18, color=c); ax.hist(v, bins=bins, density=True, histtype="step", color=c, lw=1.6, ls=ls, label=lab)
 ax.axvline(0.75, color=C["ink"], ls="--", lw=1); ax.axvline(0.5, color=C["grey"], ls=":", lw=1.2)
 ax.set_ylim(0, ax.get_ylim()[1] * 1.12); ymax = ax.get_ylim()[1]; ax.text(0.755, ymax * 0.985, "ALLOW ≥ 0.75", fontsize=9, va="top"); ax.text(0.495, ymax * 0.985, "STEP-UP ≥ 0.50", fontsize=9, va="top", ha="right", color=C["grey"])
 ax.set_xlabel("Zero-trust composite score $T(x)$"); ax.set_ylabel("Density"); ax.set_xlim(0, 1.02)
-ax.legend(loc="center left", bbox_to_anchor=(0.0, 0.60)); fig.tight_layout(); save(fig, "fig5_score_distributions.png")
+from matplotlib.lines import Line2D
+ax.legend([Line2D([], [], color=c, ls=ls, lw=1.8) for _, _, c, ls in spec], [lab for _, lab, _, _ in spec], loc="upper center", bbox_to_anchor=(0.5, -0.2), ncol=5, handlelength=2.6, columnspacing=1.2, fontsize=9.5)
+fig.tight_layout(); save(fig, "fig5_score_distributions.png")
 
 def roc(s, atk):
     th = np.unique(np.concatenate([[-1, 2], s])); fpr = [(s[atk == 0] < t).mean() for t in th]; tpr = [(s[atk == 1] < t).mean() for t in th]
@@ -66,7 +68,7 @@ fig.tight_layout(rect=(0, 0.08, 1, 1)); save(fig, "fig7_fabric_real_benchmark.pn
 w = pd.read_csv(os.path.join(D, "exp5_weight_sensitivity.csv")); dd = pd.read_csv(os.path.join(D, "exp5_difficulty_sweep.csv"))
 rnd = w[w.weights != "nominal"]; nom = float(w[w.weights == "nominal"].auc.iloc[0])
 fig, ax = plt.subplots(1, 2, figsize=(7, 2.8))
-ax[0].hist(rnd.auc, bins=25, color=C["sky"], edgecolor="white"); ax[0].axvline(nom, color=C["ink"], ls="--", lw=1.2)
+ax[0].hist(rnd.auc, bins=25, color=C["blue"], edgecolor="white"); ax[0].axvline(nom, color=C["ink"], ls="--", lw=1.2)
 ax[0].text(nom - 0.0003, ax[0].get_ylim()[1] * 0.97, "nominal ", fontsize=10, va="top", ha="right"); ax[0].set_xlabel("ROC-AUC (500 random weight vectors)"); ax[0].set_ylabel("Count")
 ax[1].plot(dd.difficulty_d, dd.zte_auc, "-o", color=C["blue"], label="Trust engine"); ax[1].plot(dd.difficulty_d, dd.bio_only_auc, "-s", color=C["verm"], label="Biometric only")
 ax[1].set_xlabel("Attack difficulty $d$ (0 = Exp. 3)"); ax[1].set_ylabel("ROC-AUC"); ax[1].legend(loc="lower left")

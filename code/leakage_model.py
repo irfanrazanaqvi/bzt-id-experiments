@@ -100,17 +100,20 @@ print(res['monte_carlo']); print(mit)
 # figure: P(target index pinned) vs attacker knowledge window, immediate vs batched anchoring
 try:
     import matplotlib; matplotlib.use('Agg'); import matplotlib.pyplot as plt
+    plt.rcParams['pdf.fonttype'] = 42  # TrueType fonts, no Type 3
     try:
         import figstyle; C = figstyle.C
     except Exception:
         C = {'blue': '#0072B2', 'verm': '#D55E00', 'green': '#009E73', 'grey': '#7f7f7f'}
     tau = np.logspace(1, 5, 200)
-    fig, ax = plt.subplots(figsize=(7, 2.9))
+    plt.rcParams.update({'font.size': 9, 'axes.labelsize': 9, 'xtick.labelsize': 8.5, 'ytick.labelsize': 8.5, 'legend.fontsize': 8})
+    fig, ax = plt.subplots(figsize=(3.4, 2.5))
     for cad, lab, col, ls in [(0, 'anchor each revocation', C['verm'], '-'), (3600, 'hourly epoch', C['blue'], '--'), (86400, 'daily epoch', C['green'], ':')]:
         for R, lw in [(548, 2.2)]:
             w = tau if cad == 0 else np.maximum(tau, cad)
             ax.plot(tau / 60, np.exp(-R * w / 86400), color=col, ls=ls, lw=lw, label=lab)
-    ax.set_xscale('log'); ax.set_xlabel("Attacker's knowledge of revocation time (minutes)"); ax.set_ylabel('P(target index pinned)')
+    ax.set_xscale('log'); ax.set_xticks([1, 10, 100, 1000]); ax.set_xticklabels(['1', '10', '100', '1,000'])
+    ax.set_xlabel("Knowledge of revocation time (min)"); ax.set_ylabel('P(target index pinned)')
     ax.set_ylim(-0.02, 1.02); ax.grid(alpha=.3); ax.legend(frameon=False, loc='upper right')
     fig.tight_layout(); fig.savefig(os.path.join(FIG, 'fig_leakage.pdf')); fig.savefig(os.path.join(FIG, 'fig_leakage.png'), dpi=600)
     print('figure written')
